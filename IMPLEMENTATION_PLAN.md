@@ -4,7 +4,7 @@ Data przygotowania: 9 listopada 2026 r.
 
 Podstawa: [SPEC.md](SPEC.md). Specyfikacja pozostaje źródłem wymagań; ten dokument określa kolejność prac, zależności, rezultaty i sposób ich odbioru. Zmiana zakresu wymaga najpierw uzgodnienia i aktualizacji specyfikacji.
 
-Stan początkowy: repozytorium zawiera `SPEC.md`, podstawowy `README.md` i `LICENSE`. Brak implementacji aplikacji. Wszystkie zadania poniżej są otwarte; zaznaczać je po wykonaniu i sprawdzeniu rezultatu.
+Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r. Etapy 2–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
 
 ## 1. Zasady realizacji
 
@@ -34,20 +34,22 @@ Nie przechodzić do kolejnego etapu z niespełnionym kryterium odbioru jego zale
 
 Odniesienie: SPEC §2, §3, §9 i §11.
 
-- [ ] Utworzyć środowisko Python 3.12, projekt `config`, aplikację `registry` i `manage.py`.
-- [ ] Przygotować `requirements.txt`, konfigurację szablonów, plików statycznych, strefy czasowej, języka polskiego i SQLite.
-- [ ] Ustawić ścieżkę bazy tak, aby później można było skierować ją do trwałego wolumenu kontenera.
-- [ ] Dodać `.gitignore` dla środowiska wirtualnego, bazy, sekretów i plików generowanych oraz `.env.example` zawierający wyłącznie przykładowe ustawienia bez sekretów.
-- [ ] Pobierać `SECRET_KEY` ze środowiska. Opisać konfigurację lokalną, w tym sposób przekazania zmiennych środowiskowych; sam plik `.env` nie jest automatycznie odczytywany przez Django.
-- [ ] Skonfigurować logowanie przez `/accounts/login/`, wylogowanie przez POST i CSRF także dla formularza logowania.
-- [ ] Przygotować wspólne sprawdzanie roli: grupa `personel` albo superuser. W HTML niezalogowany użytkownik trafia do logowania; zalogowany bez roli nie otrzymuje danych.
-- [ ] Przygotować wspólny szablon z nawigacją i formularzami django-bootstrap5, w tym formularzem logowania. Administracja widoczna wyłącznie dla administratora.
-- [ ] Umieścić Bootstrap CSS/JS w lokalnym `static/` i zachować informacje licencyjne.
-- [ ] Dodać model `AuditLog`, pierwszą migrację, funkcję zapisu audytu oraz obsługę zdarzeń logowania i wylogowania.
-- [ ] Udostępnić audyt tylko administratorowi w Django Admin, bez możliwości dodawania, zmiany lub usuwania wpisów.
-- [ ] Dodać testy dostępu dla użytkownika niezalogowanego, bez roli, personelu i administratora.
+- [x] Utworzyć środowisko Python 3.12, projekt `config`, aplikację `registry` i `manage.py`.
+- [x] Przygotować `requirements.txt`, konfigurację szablonów, plików statycznych, strefy czasowej, języka polskiego i SQLite.
+- [x] Ustawić ścieżkę bazy tak, aby później można było skierować ją do trwałego wolumenu kontenera.
+- [x] Dodać `.gitignore` dla środowiska wirtualnego, bazy, sekretów i plików generowanych oraz `.env.example` zawierający wyłącznie przykładowe ustawienia bez sekretów.
+- [x] Pobierać `SECRET_KEY` ze środowiska. Opisać konfigurację lokalną, w tym sposób przekazania zmiennych środowiskowych; sam plik `.env` nie jest automatycznie odczytywany przez Django.
+- [x] Skonfigurować logowanie przez `/accounts/login/`, wylogowanie przez POST i CSRF także dla formularza logowania.
+- [x] Przygotować wspólne sprawdzanie roli: grupa `personel` albo superuser. W HTML niezalogowany użytkownik trafia do logowania; zalogowany bez roli nie otrzymuje danych.
+- [x] Przygotować wspólny szablon z nawigacją i formularzami django-bootstrap5, w tym formularzem logowania. Administracja widoczna wyłącznie dla administratora.
+- [x] Umieścić Bootstrap CSS/JS w lokalnym `static/` i zachować informacje licencyjne.
+- [x] Dodać model `AuditLog`, pierwszą migrację, funkcję zapisu audytu oraz obsługę zdarzeń logowania i wylogowania.
+- [x] Udostępnić audyt tylko administratorowi w Django Admin, bez możliwości dodawania, zmiany lub usuwania wpisów.
+- [x] Dodać testy dostępu dla użytkownika niezalogowanego, bez roli, personelu i administratora.
 
 **Kryterium odbioru:** projekt przechodzi `python manage.py check` i migracje; można się zalogować i wylogować; dostęp wynika z roli; zdarzenia sesji trafiają do audytu; formularz logowania korzysta z lokalnego Bootstrap i django-bootstrap5.
+
+**Wynik odbioru, 9 listopada 2026 r.:** migracje wykonane na pustej bazie; `check`, `makemigrations --check --dry-run` i `pip check` bez błędów; 24 testy zakończone powodzeniem. Uruchomiony lokalny serwer zwrócił formularz logowania, przekierował niezalogowanego użytkownika ze stron pacjentów/raportów i udostępnił lokalne CSS/JS Bootstrap oraz CSS aplikacji. Reguły ról, sesje, CSRF, audyt i powiązania etykiet/opisów/błędów sprawdzono automatycznie. Pełny odbiór dostępności pozostaje w etapie 7. Strony pacjentów i raportów są na razie stronami zastępczymi; konta/grupę można utworzyć ręcznie według README, a `seed_demo` powstanie w etapie 2.
 
 ## 4. Etap 2 — model danych, walidacja i inicjalizacja
 

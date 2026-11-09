@@ -1,0 +1,7 @@
+{% load django_bootstrap5 %}
+<form method="post">
+  {% csrf_token %}
+  {% bootstrap_form form %}
+  {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+  <button type="submit" class="btn btn-primary">{{ submit_label|default:"Zapisz" }}</button>
+</form>

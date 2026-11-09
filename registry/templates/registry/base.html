@@ -1,0 +1,35 @@
+{% load static django_bootstrap5 %}
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Rejestr pacjentów{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'registry/app.css' %}">
+  <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}" defer></script>
+</head>
+<body class="bg-body-tertiary">
+  <a class="visually-hidden-focusable skip-link" href="#main">Przejdź do treści</a>
+  <header class="bg-white border-bottom">
+    <nav class="container py-3 d-flex flex-wrap gap-3 align-items-center" aria-label="Nawigacja główna">
+      <a class="fw-semibold text-decoration-none text-dark me-auto" href="{% url 'registry:patient-list' %}">Rejestr pacjentów</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'registry:patient-list' %}"{% if request.resolver_match.url_name == 'patient-list' %} aria-current="page"{% endif %}>Pacjenci</a>
+        <a href="{% url 'registry:report-list' %}"{% if request.resolver_match.url_name == 'report-list' %} aria-current="page"{% endif %}>Raporty</a>
+        {% if user.is_superuser %}<a href="{% url 'admin:index' %}">Administracja</a>{% endif %}
+        <span class="text-body-secondary">{{ user.get_username }}</span>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-secondary btn-sm" type="submit">Wyloguj</button>
+        </form>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container py-4 py-md-5" id="main" tabindex="-1">
+    {% bootstrap_messages %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="container pb-4 text-body-secondary small">Prototyp demonstracyjny · wyłącznie dane syntetyczne</footer>
+</body>
+</html>

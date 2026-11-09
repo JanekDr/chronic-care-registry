@@ -1,0 +1,15 @@
+{% extends "registry/base.html" %}
+{% block title %}Logowanie · Rejestr pacjentów{% endblock %}
+{% block content %}
+  <div class="row justify-content-center">
+    <section class="col-12 col-md-7 col-lg-5" aria-labelledby="login-heading">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h3 mb-3" id="login-heading">Logowanie</h1>
+          <p class="text-body-secondary">Zaloguj się na konto personelu lub administratora.</p>
+          {% include "registry/includes/form.html" with submit_label="Zaloguj" %}
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
