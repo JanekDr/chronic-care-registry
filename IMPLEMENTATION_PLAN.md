@@ -4,7 +4,7 @@ Data przygotowania: 9 listopada 2026 r.
 
 Podstawa: [SPEC.md](SPEC.md). Specyfikacja pozostaje źródłem wymagań; ten dokument określa kolejność prac, zależności, rezultaty i sposób ich odbioru. Zmiana zakresu wymaga najpierw uzgodnienia i aktualizacji specyfikacji.
 
-Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r. Etapy 2–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
+Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r., etap 2 — 10 listopada 2026 r. Etapy 3–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
 
 ## 1. Zasady realizacji
 
@@ -55,21 +55,23 @@ Odniesienie: SPEC §2, §3, §9 i §11.
 
 Odniesienie: SPEC §4, §8 i §10.
 
-- [ ] Dodać modele `Patient`, `ICD10Code`, `Diagnosis`, `Visit`, `Measurement` i `Report` z polami, długościami, znacznikami czasu i typami ze specyfikacji.
-- [ ] Ustawić `PROTECT` na relacjach klinicznych i `Report.icd10`; odwołania do autorów mogą mieć `SET_NULL`. Nie powielać pacjenta, daty ani jednostki w modelu pomiaru.
-- [ ] Dodać bazowe ograniczenie unikalności `(patient, icd10)` oraz migracje.
-- [ ] Zdefiniować dwa rodzaje pomiarów i ich stałe mapowanie jednostek, kodów LOINC oraz kategorii FHIR.
-- [ ] Zaimplementować współdzieloną walidację: wymagane imię i nazwisko po przycięciu spacji, daty względem urodzenia i dnia bieżącego, istniejący kod słownikowy, dodatni skończony Decimal oraz poprawny okres raportu.
-- [ ] Sprawdzać zmianę daty urodzenia względem już istniejących rozpoznań i wizyt. Walidować również zmianę powiązanego pacjenta w rozpoznaniu lub wizycie.
-- [ ] Ustalić jeden sposób wywoływania walidacji z ModelForm i serializerów; nie zakładać, że samo `save()` modelu uruchamia `full_clean()`. Przy PATCH uwzględniać także niezmieniane wartości istniejącego obiektu.
-- [ ] Zarejestrować modele w Django Admin. Słownik i konta są zarządzane przez administratora; konta autorów dezaktywować zamiast usuwać.
-- [ ] Objąć zmiany danych dostępne przez Django Admin właściwą walidacją i audytem. Zapobiec obchodzeniu reguł przez akcje zbiorcze.
-- [ ] Przygotować `seed_demo`: słownik obejmujący co najmniej `I10` i `E11.9`, grupę `personel`, konta i około 10 fikcyjnych pacjentów z zależnościami.
-- [ ] Pobierać hasła inicjalizacyjne ze środowiska. Ponowne uruchomienie inicjalizacji nie może duplikować danych, resetować haseł ani nadpisywać zmian użytkownika.
-- [ ] Oddzielić stałą próbkę testową raportów od danych demonstracyjnych, aby testy nie zależały od ręcznych zmian bazy.
-- [ ] Dodać testy reguł dat, spacji, duplikatów, precyzji/liczby cyfr Decimal, wartości niedodatnich, NaN/nieskończoności i ochrony relacji.
+- [x] Dodać modele `Patient`, `ICD10Code`, `Diagnosis`, `Visit`, `Measurement` i `Report` z polami, długościami, znacznikami czasu i typami ze specyfikacji.
+- [x] Ustawić `PROTECT` na relacjach klinicznych i `Report.icd10`; odwołania do autorów mogą mieć `SET_NULL`. Nie powielać pacjenta, daty ani jednostki w modelu pomiaru.
+- [x] Dodać bazowe ograniczenie unikalności `(patient, icd10)` oraz migracje.
+- [x] Zdefiniować dwa rodzaje pomiarów i ich stałe mapowanie jednostek, kodów LOINC oraz kategorii FHIR.
+- [x] Zaimplementować współdzieloną walidację: wymagane imię i nazwisko po przycięciu spacji, daty względem urodzenia i dnia bieżącego, istniejący kod słownikowy, dodatni skończony Decimal oraz poprawny okres raportu.
+- [x] Sprawdzać zmianę daty urodzenia względem już istniejących rozpoznań i wizyt. Walidować również zmianę powiązanego pacjenta w rozpoznaniu lub wizycie.
+- [x] Ustalić jeden sposób wywoływania walidacji z ModelForm i serializerów; nie zakładać, że samo `save()` modelu uruchamia `full_clean()`. Przy PATCH uwzględniać także niezmieniane wartości istniejącego obiektu.
+- [x] Zarejestrować modele w Django Admin. Słownik i konta są zarządzane przez administratora; konta autorów dezaktywować zamiast usuwać.
+- [x] Objąć zmiany danych dostępne przez Django Admin właściwą walidacją i audytem. Zapobiec obchodzeniu reguł przez akcje zbiorcze.
+- [x] Przygotować `seed_demo`: słownik obejmujący co najmniej `I10` i `E11.9`, grupę `personel`, konta i około 10 fikcyjnych pacjentów z zależnościami.
+- [x] Pobierać hasła inicjalizacyjne ze środowiska. Ponowne uruchomienie inicjalizacji nie może duplikować danych, resetować haseł ani nadpisywać zmian użytkownika.
+- [x] Oddzielić stałą próbkę testową raportów od danych demonstracyjnych, aby testy nie zależały od ręcznych zmian bazy.
+- [x] Dodać testy reguł dat, spacji, duplikatów, precyzji/liczby cyfr Decimal, wartości niedodatnich, NaN/nieskończoności i ochrony relacji.
 
 **Kryterium odbioru:** migracje działają na pustej bazie; modele egzekwują wymagane reguły; dwukrotne wykonanie `seed_demo` pozostawia te same rekordy i zachowuje zmiany użytkownika.
+
+**Wynik odbioru, 10 listopada 2026 r.:** 62 testy zakończone powodzeniem; `check`, `makemigrations --check --dry-run`, `pip check` i `git diff --check` bez błędów. Na osobnej pustej bazie wykonano migracje i dwukrotnie `seed_demo` (drugi raz bez haseł w środowisku); zrzut bazy po drugim uruchomieniu był identyczny. Utworzono 10 pacjentów, 10 rozpoznań, 20 wizyt, 40 pomiarów oraz 85 wpisów audytu inicjalizacji. Testy potwierdzają zachowanie ręcznych edycji danych, loginu, kodu słownikowego, haseł, aktywności, ról i znaczników czasu, a także wycofanie zmian przy błędzie audytu, w tym osobnej ścieżki zmiany hasła w administracji. Wspólne reguły są w modelach i `registry/validation.py`; ModelForm wywołuje `full_clean()`, a helper dla przyszłych serializerów sprawdza pełną kopię obiektu z uwzględnieniem PATCH. Próbka A/B/C jest w `registry/tests/report_sample.py`. README opisuje inicjalizację oraz zarezerwowane identyfikatory demo, a `docs/TERMINOLOGY.md` — źródła i warunki słowników. Raport jest zarejestrowany w administracji do odczytu/usuwania; jego tworzenie i edycja pozostają wyłączone do wdrożenia przeliczenia w etapie 4. Widoki CRUD personelu pozostają zakresem etapu 3.
 
 ## 5. Etap 3 — interfejs rejestru i CRUD
 

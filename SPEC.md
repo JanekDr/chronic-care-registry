@@ -97,7 +97,7 @@ Każdy model ma domyślny klucz `id` typu BigAutoField. Modele kliniczne i rapor
 
 | Model | Pola |
 | --- | --- |
-| `Patient` | `first_name` CharField(80), `last_name` CharField(80), `birth_date` DateField, `gender` choices: `female`, `male`, `other`, `unknown`. |
+| `Patient` | `first_name` CharField(80), `last_name` CharField(80), `birth_date` DateField, `gender` choices: `female`, `male`, `other`. |
 | `ICD10Code` | `code` CharField(10, unique=True), `name` CharField(255). |
 | `Diagnosis` | `patient` FK Patient, `icd10` FK ICD10Code, `diagnosed_on` DateField, `notes` TextField(blank=True, max_length=1000). |
 | `Visit` | `patient` FK Patient, `visit_date` DateField, `notes` TextField(blank=True, max_length=2000), `created_by` FK User. |
