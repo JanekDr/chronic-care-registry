@@ -3,13 +3,14 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from .forms import PatientDiagnosisForm, PatientForm, PatientVisitForm, VisitMeasurementForm
-from .models import AuditLog, Diagnosis, ICD10Code, Measurement, Patient, Visit
+from .forms import PatientDiagnosisForm, PatientForm, PatientVisitForm, VisitMeasurementForm, ReportForm
+from .models import AuditLog, Diagnosis, ICD10Code, Measurement, Patient, Visit, Report
 from .permissions import RegistryAccessMixin
-from .services import record_audit
+from .services import record_audit, save_report
 
 
 class ReadAuditMixin:
@@ -293,5 +294,53 @@ class MeasurementDeleteView(RegistryAccessMixin, ReadAuditMixin, MeasurementBase
     page_title = "Usuń pomiar"
 
 
-class ReportListView(RegistryAccessMixin, TemplateView):
+class ReportListView(RegistryAccessMixin, ReadAuditMixin, ListView):
+    model = Report
+    queryset = Report.objects.select_related("icd10", "created_by").order_by("id")
     template_name = "registry/report_list.html"
+    paginate_by = 20
+
+
+class ReportDetailView(RegistryAccessMixin, ReadAuditMixin, DetailView):
+    model = Report
+    template_name = "registry/report_detail.html"
+    queryset = Report.objects.select_related("icd10", "created_by")
+
+
+class ReportSaveMixin(AuditedSaveMixin):
+    model = Report
+    form_class = ReportForm
+    read_lists = (ICD10Code,)
+
+    def form_valid(self, form):
+        self.object = save_report(report=form.instance, user=self.request.user)
+        messages.success(self.request, "Zapisano i przeliczono raport.")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("registry:report-detail", args=[self.object.pk])
+
+    def get_cancel_url(self):
+        return self.get_success_url() if self.object else reverse("registry:report-list")
+
+    def get_context_data(self, **kwargs):
+        return {**super().get_context_data(**kwargs), "submit_label": "Zapisz i przelicz"}
+
+
+class ReportCreateView(RegistryAccessMixin, ReadAuditMixin, ReportSaveMixin, CreateView):
+    page_title = "Dodaj raport"
+
+
+class ReportUpdateView(RegistryAccessMixin, ReadAuditMixin, ReportSaveMixin, UpdateView):
+    page_title = "Edytuj raport"
+
+
+class ReportDeleteView(RegistryAccessMixin, ReadAuditMixin, AuditedDeleteMixin, DeleteView):
+    model = Report
+    page_title = "Usuń raport"
+
+    def get_success_url(self):
+        return reverse("registry:report-list")
+
+    def get_cancel_url(self):
+        return reverse("registry:report-detail", args=[self.object.pk])

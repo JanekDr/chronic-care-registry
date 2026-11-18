@@ -5,15 +5,15 @@ a kolejność prac i kryteria odbioru — [IMPLEMENTATION_PLAN.md](IMPLEMENTATIO
 
 ## Aktualny stan
 
-Ukończono etapy 1–3: projekt Django, sesje, role, lokalny Bootstrap, audyt,
+Ukończono etapy 1–4: projekt Django, sesje, role, lokalny Bootstrap, audyt,
 modele kliniczne i raportu, wspólna walidacja, administracja, `seed_demo`
-oraz pełna ścieżka HTML pacjent → rozpoznanie → wizyta → pomiar.
+oraz pełna ścieżka HTML pacjent → rozpoznanie → wizyta → pomiar i zapisane raporty.
 Administrator może zarządzać pacjentami, rozpoznaniami, wizytami, pomiarami,
-słownikiem oraz kontami przez Django Admin. Raporty w administracji mają na razie
-wyłącznie odczyt i usuwanie; ich zapis z przeliczeniem powstanie w etapie 4.
+słownikiem oraz kontami przez Django Admin. Raporty w administracji można
+tworzyć i edytować z przeliczeniem oraz usuwać; każda zmiana ma audyt.
 Personel i administrator mogą przeglądać, dodawać, poprawiać i usuwać dane
-kliniczne przez **Pacjentów**. **Raporty** pozostają chronioną stroną zastępczą.
-Obliczenia raportów, REST API, FHIR i kontener należą do następnych etapów.
+kliniczne przez **Pacjentów** i tworzyć zestawienia przez **Raporty**.
+REST API, FHIR i kontener należą do następnych etapów.
 
 ## Uruchomienie lokalne — Windows / PowerShell
 
@@ -189,7 +189,34 @@ Relacje kliniczne i `Report.icd10` używają `PROTECT`; autorzy mają `SET_NULL`
 Pomiar przechowuje tylko wizytę, rodzaj i Decimal, a jednostka, LOINC i kategoria
 FHIR wynikają z `Measurement.DEFINITIONS`.
 
-## Sprawdzenie etapów 1–3
+## Raporty
+
+W **Raportach** wybierz **Dodaj raport**, podaj nazwę, początek i koniec okresu
+oraz opcjonalnie wpis słownika ICD-10. **Zapisz i przelicz** zapisuje parametry
+i wynik. Okres obejmuje obie daty graniczne. Brak kodu oznacza **Wszystkie
+rozpoznania** i obejmuje również pacjentów bez rozpoznań.
+
+Liczba pacjentów to liczba różnych osób z wizytami w wybranym okresie.
+Filtr ICD-10 uwzględnia rozpoznanie tylko wtedy, gdy jego data nie jest późniejsza
+niż data wizyty. Dodatkowe rozpoznania nie powielają wizyt ani pomiarów.
+Glukoza i masa ciała mają osobne liczności, średnie, minima i maksima.
+Brak pomiarów oznacza liczność 0 i statystyki `null`, wyświetlane jako
+**Brak pomiarów**. Statystyki liczone są z Decimal, zaokrąglane do dwóch miejsc
+metodą `ROUND_HALF_UP` i przechowywane w JSON jako ciągi znaków.
+
+Szczegóły pokazują zapisaną migawkę i czas ostatniego obliczenia (`updated_at`).
+Zmiana danych klinicznych nie odświeża raportu. Aby odświeżyć wynik, wybierz
+**Edytuj i przelicz**, a następnie **Zapisz i przelicz** — nawet bez zmiany
+parametrów. Usunięcie raportu wymaga potwierdzenia.
+
+Wspólna funkcja `registry.services.calculate_report` nie zapisuje danych ani
+audytu. HTML korzysta z `save_report`, który obejmuje walidację, obliczenie,
+zapis i pojedynczy wpis audytu jedną transakcją. Django Admin korzysta z tego
+samego kalkulatora w swojej transakcji zapisu i audytu. Autor jest ustawiany
+przy utworzeniu i zachowywany podczas edycji. Przyszłe API ma używać tych samych
+funkcji. W SQLite średnia jest liczona w Pythonie z Decimal, bez SQL AVG/float.
+
+## Sprawdzenie etapów 1–4
 
 W sesji z ustawionym `SECRET_KEY`:
 
@@ -215,6 +242,12 @@ audyt odczytów i zmian oraz atomowość create/update/delete każdego modelu.
 Osobny scenariusz z `Client(enforce_csrf_checks=True)` sprawdza brak tokenu
 na wszystkich formularzach i pełną ścieżkę z poprawnym tokenem.
 Sprawdzenie HTML nie zastępuje pełnego odbioru dostępności przewidzianego w etapie 7.
+
+Testy raportów sprawdzają stałą próbkę A/B/C, daty graniczne i datę rozpoznania,
+brak podwójnego zliczania, brak filtra, puste zbiory, obie jednostki, precyzję
+i zaokrąglanie, trwałość migawki i przeliczenie przy każdym zapisie. Obejmują
+również role, CSRF, błędy formularza, escapowanie nazwy, audyt odczytów/CRUD,
+autora i wycofanie zmian po błędzie audytu w HTML oraz administracji.
 
 ## Źródła techniczne
 

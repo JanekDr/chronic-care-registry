@@ -25,4 +25,8 @@ urlpatterns = [
     path("visits/<int:visit_pk>/measurements/<int:pk>/edit/", views.MeasurementUpdateView.as_view(), name="measurement-update"),
     path("visits/<int:visit_pk>/measurements/<int:pk>/delete/", views.MeasurementDeleteView.as_view(), name="measurement-delete"),
     path("reports/", views.ReportListView.as_view(), name="report-list"),
+    path("reports/add/", views.ReportCreateView.as_view(), name="report-create"),
+    path("reports/<int:pk>/", views.ReportDetailView.as_view(), name="report-detail"),
+    path("reports/<int:pk>/edit/", views.ReportUpdateView.as_view(), name="report-update"),
+    path("reports/<int:pk>/delete/", views.ReportDeleteView.as_view(), name="report-delete"),
 ]

@@ -4,7 +4,7 @@ Data przygotowania: 9 listopada 2026 r.
 
 Podstawa: [SPEC.md](SPEC.md). Specyfikacja pozostaje źródłem wymagań; ten dokument określa kolejność prac, zależności, rezultaty i sposób ich odbioru. Zmiana zakresu wymaga najpierw uzgodnienia i aktualizacji specyfikacji.
 
-Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r., etap 2 — 10 listopada 2026 r. Etap 3 — 18 listopada 2026 r. Etapy 4–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
+Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r., etap 2 — 10 listopada 2026 r. Etap 3 — 18 listopada 2026 r. Etap 4 — 18 listopada 2026 r. Etapy 5–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
 
 ## 1. Zasady realizacji
 
@@ -96,19 +96,21 @@ Odniesienie: SPEC §3–5 i §9.
 
 Odniesienie: SPEC §4–6 i §10.
 
-- [ ] Zaimplementować jedną funkcję obliczającą raport w `registry/services.py`, używaną później również przez API.
-- [ ] Wybierać wizyty w okresie domkniętym. Opcjonalny filtr ICD-10 uwzględnia wyłącznie rozpoznania z `diagnosed_on <= visit_date`.
-- [ ] Zastosować `Exists` lub podzapytanie, aby wiele rozpoznań pacjenta nie powielało wizyt i pomiarów.
-- [ ] Obliczać liczbę wizyt i różnych pacjentów oraz oddzielne `count`, `avg`, `min`, `max` dla glukozy i masy ciała.
-- [ ] Użyć Decimal, określić jawnie sposób zaokrąglania do dwóch miejsc i zapisywać wartości dziesiętne wyniku jako ciągi znaków. Dla pustych zbiorów zapisywać `0` i `null` zgodnie z SPEC.
-- [ ] Dodać listę, formularz, szczegóły i potwierdzenie usunięcia raportu. Parametr ICD-10 jest identyfikatorem wpisu słownika albo brakiem wartości.
-- [ ] Na utworzenie i każdy zapis edycji obliczać i zapisywać wynik wraz z audytem w jednej transakcji. Użyć przycisku „Zapisz i przelicz”.
-- [ ] Przy odczycie zwracać zapisany wynik bez przeliczenia; `updated_at` wykorzystać jako moment ostatniego obliczenia.
-- [ ] Wyświetlać parametry, kod lub „Wszystkie rozpoznania”, definicję liczby pacjentów oraz „Brak pomiarów” tam, gdzie brak statystyk.
-- [ ] Dodać test próbki A/B/C: dla I10 w październiku 2026 wynik wynosi 1 pacjent, 2 wizyty, 2 pomiary glukozy, średnia `110.00`, minimum `100.00`, maksimum `120.00`.
-- [ ] Sprawdzić dodatkowe rozpoznanie pacjenta A, wizytę przed datą rozpoznania, obie granice okresu, brak filtra, pusty wynik i niezależność zapisanej migawki od późniejszej zmiany pomiaru.
+- [x] Zaimplementować jedną funkcję obliczającą raport w `registry/services.py`, używaną później również przez API.
+- [x] Wybierać wizyty w okresie domkniętym. Opcjonalny filtr ICD-10 uwzględnia wyłącznie rozpoznania z `diagnosed_on <= visit_date`.
+- [x] Zastosować `Exists` lub podzapytanie, aby wiele rozpoznań pacjenta nie powielało wizyt i pomiarów.
+- [x] Obliczać liczbę wizyt i różnych pacjentów oraz oddzielne `count`, `avg`, `min`, `max` dla glukozy i masy ciała.
+- [x] Użyć Decimal, określić jawnie sposób zaokrąglania do dwóch miejsc i zapisywać wartości dziesiętne wyniku jako ciągi znaków. Dla pustych zbiorów zapisywać `0` i `null` zgodnie z SPEC.
+- [x] Dodać listę, formularz, szczegóły i potwierdzenie usunięcia raportu. Parametr ICD-10 jest identyfikatorem wpisu słownika albo brakiem wartości.
+- [x] Na utworzenie i każdy zapis edycji obliczać i zapisywać wynik wraz z audytem w jednej transakcji. Użyć przycisku „Zapisz i przelicz”.
+- [x] Przy odczycie zwracać zapisany wynik bez przeliczenia; `updated_at` wykorzystać jako moment ostatniego obliczenia.
+- [x] Wyświetlać parametry, kod lub „Wszystkie rozpoznania”, definicję liczby pacjentów oraz „Brak pomiarów” tam, gdzie brak statystyk.
+- [x] Dodać test próbki A/B/C: dla I10 w październiku 2026 wynik wynosi 1 pacjent, 2 wizyty, 2 pomiary glukozy, średnia `110.00`, minimum `100.00`, maksimum `120.00`.
+- [x] Sprawdzić dodatkowe rozpoznanie pacjenta A, wizytę przed datą rozpoznania, obie granice okresu, brak filtra, pusty wynik i niezależność zapisanej migawki od późniejszej zmiany pomiaru.
 
 **Kryterium odbioru:** wyniki zgadzają się z próbką SPEC, odczyt zachowuje migawkę, a zapis edycji odświeża ją na aktualnych danych.
+
+**Wynik odbioru, 18 listopada 2026 r.:** 95 testów zakończonych powodzeniem; `check`, `makemigrations --check --dry-run` i `pip check` bez błędów. Wspólny kalkulator w `registry/services.py` używa Exists dla datowanych rozpoznań i Decimal z ROUND_HALF_UP, bez konwersji średniej do float. Próbka A/B/C daje 1 pacjenta, 2 wizyty oraz glukozę: count 2, avg 110.00, min 100.00, max 120.00. Sprawdzono drugie rozpoznanie, wizytę przed rozpoznaniem i w jego dniu, obie granice okresu, brak filtra (także pacjenta bez rozpoznań), puste wyniki, wizyty bez pomiarów, obie jednostki i zaokrąglanie połówek. HTML udostępnia listę, formularze, szczegóły i potwierdzenie usunięcia raportu; każdy zapis przelicza migawkę. Odczyt zachowuje wynik i updated_at po zmianie pomiarów. Testy obejmują role, CSRF, walidację, autora, escapowanie nazwy, audyt i atomowość create/update/delete, a także przeliczenie i wycofanie zapisu w Django Admin. Nie zmieniono modeli ani migracji. README opisuje raporty. Odbiór tego etapu wykonano automatycznie; pełny przegląd w przeglądarce i ocena dostępności pozostają w etapie 7. REST API i FHIR pozostają w etapach 5–6.
 
 ## 7. Etap 5 — REST API i OpenAPI
 

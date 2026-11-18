@@ -1,8 +1,12 @@
 {% extends "registry/base.html" %}
 {% block title %}Raporty · Rejestr pacjentów{% endblock %}
 {% block content %}
-  <h1 class="h2 mb-4">Raporty</h1>
-  <div class="border rounded bg-white p-4">
-    <p class="mb-0">Raporty są obecnie niedostępne.</p>
-  </div>
+  <div class="d-flex flex-wrap justify-content-between gap-3 mb-4"><h1 class="h2">Raporty</h1><a class="btn btn-primary" href="{% url 'registry:report-create' %}">Dodaj raport</a></div>
+  <p>Raport zachowuje wynik z chwili ostatniego zapisu. Edycja i zapis przeliczają go na aktualnych danych.</p>
+  <div class="table-responsive bg-white border rounded"><table class="table mb-0">
+    <caption class="visually-hidden">Zapisane raporty</caption>
+    <thead><tr><th scope="col">Nazwa</th><th scope="col">Okres</th><th scope="col">ICD-10</th><th scope="col">Ostatnie obliczenie</th></tr></thead>
+    <tbody>{% for report in object_list %}<tr><th scope="row"><a href="{% url 'registry:report-detail' report.pk %}">{{ report.name }}</a></th><td>{{ report.date_from|date:"d.m.Y" }} – {{ report.date_to|date:"d.m.Y" }}</td><td>{{ report.icd10|default:"Wszystkie rozpoznania" }}</td><td>{{ report.updated_at|date:"d.m.Y H:i:s" }}</td></tr>{% empty %}<tr><td colspan="4">Brak zapisanych raportów.</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if is_paginated %}<nav class="mt-4 d-flex gap-3" aria-label="Strony raportów">{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Poprzednia</a>{% endif %}<span aria-current="page">Strona {{ page_obj.number }} z {{ paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Następna</a>{% endif %}</nav>{% endif %}
 {% endblock %}

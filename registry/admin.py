@@ -5,9 +5,9 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
 from django.db import router, transaction
 
-from .forms import DiagnosisForm, MeasurementForm, PatientForm, VisitForm
+from .forms import DiagnosisForm, MeasurementForm, PatientForm, VisitForm, ReportForm
 from .models import AuditLog, Diagnosis, ICD10Code, Measurement, Patient, Report, Visit
-from .services import record_audit
+from .services import record_audit, calculate_report
 
 
 class AuditedAdminMixin:
@@ -87,16 +87,17 @@ class MeasurementAdmin(ClinicalAdmin):
 
 @admin.register(Report)
 class ReportAdmin(ClinicalAdmin):
-    # Zapisy raportów wymagają przeliczenia wyniku, dostarczanego w etapie 4.
+    form = ReportForm
     list_display = ["name", "date_from", "date_to", "icd10", "updated_at"]
     list_select_related = ["icd10"]
-    readonly_fields = ["name", "date_from", "date_to", "icd10", "result", "created_by", "created_at", "updated_at"]
+    readonly_fields = ["result", "created_by", "created_at", "updated_at"]
 
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
+    def save_model(self, request, obj, form, change):
+        # Admin otwiera transakcję obejmującą save_model i pojedynczy audyt.
+        if not change:
+            obj.created_by = request.user
+        obj.result = calculate_report(date_from=obj.date_from, date_to=obj.date_to, icd10_id=obj.icd10_id)
+        super().save_model(request, obj, form, change)
 
 
 admin.site.unregister(get_user_model())

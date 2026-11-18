@@ -1,0 +1,23 @@
+{% extends "registry/base.html" %}
+{% block title %}{{ object.name }} · Raporty{% endblock %}
+{% block content %}
+  <p><a href="{% url 'registry:report-list' %}">Lista raportów</a></p>
+  <h1 class="h2 mb-4">{{ object.name }}</h1>
+  <dl class="row">
+    <dt class="col-sm-3">Okres (włącznie)</dt><dd class="col-sm-9">{{ object.date_from|date:"d.m.Y" }} – {{ object.date_to|date:"d.m.Y" }}</dd>
+    <dt class="col-sm-3">ICD-10</dt><dd class="col-sm-9">{{ object.icd10|default:"Wszystkie rozpoznania" }}</dd>
+    <dt class="col-sm-3">Ostatnie obliczenie</dt><dd class="col-sm-9">{{ object.updated_at|date:"d.m.Y H:i:s" }}</dd>
+    <dt class="col-sm-3">Autor</dt><dd class="col-sm-9">{{ object.created_by.get_username|default:"—" }}</dd>
+    <dt class="col-sm-3">Liczba pacjentów</dt><dd class="col-sm-9">{{ object.result.patient_count }}</dd>
+    <dt class="col-sm-3">Liczba wizyt</dt><dd class="col-sm-9">{{ object.result.visit_count }}</dd>
+  </dl>
+  <p>Liczba pacjentów oznacza różnych pacjentów, którzy mieli wizyty w wybranym okresie. Filtr ICD-10 uwzględnia rozpoznania istniejące najpóźniej w dniu wizyty; nie określa powodu wizyty.</p>
+  <h2 class="h4 mt-4">Pomiary</h2>
+  <div class="table-responsive bg-white border rounded"><table class="table mb-0">
+    <caption class="visually-hidden">Statystyki pomiarów z wybranych wizyt</caption>
+    <thead><tr><th scope="col">Rodzaj</th><th scope="col">Jednostka</th><th scope="col">Liczba</th><th scope="col">Średnia</th><th scope="col">Minimum</th><th scope="col">Maksimum</th></tr></thead>
+    <tbody>{% for row in object.result.measurements %}<tr><th scope="row">{% if row.kind == 'blood_glucose' %}Glukoza we krwi{% else %}Masa ciała{% endif %}</th><td>{{ row.unit }}</td><td>{{ row.count }}</td>{% if row.count %}<td>{{ row.avg }}</td><td>{{ row.min }}</td><td>{{ row.max }}</td>{% else %}<td colspan="3">Brak pomiarów</td>{% endif %}</tr>{% endfor %}</tbody>
+  </table></div>
+  <p class="mt-3">To zapisany wynik. Późniejsze zmiany danych nie odświeżają go automatycznie.</p>
+  <div class="d-flex flex-wrap gap-2 mt-4"><a class="btn btn-outline-primary" href="{% url 'registry:report-update' object.pk %}">Edytuj i przelicz</a><a class="btn btn-outline-danger" href="{% url 'registry:report-delete' object.pk %}">Usuń raport</a></div>
+{% endblock %}

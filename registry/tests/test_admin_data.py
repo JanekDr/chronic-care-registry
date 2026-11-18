@@ -174,11 +174,18 @@ class DataAdminTests(RoleTestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertTrue(response.url.startswith(reverse("admin:login")))
 
-    def test_report_cannot_be_created_or_edited_before_calculator_exists(self):
-        report = Report.objects.create(name="Próbka", date_from=self.day, date_to=self.day)
-        for action, obj in (("add", None), ("change", report)):
-            with self.subTest(action=action):
-                self.assertEqual(self.client.post(self.url(Report, action, obj), {"name": "Zmiana"}).status_code, 403)
+    def test_admin_report_save_calculates_result_and_audits_once(self):
+        data = {"name": "Próbka", "date_from": self.day, "date_to": self.day}
+        self.assertEqual(self.client.post(self.url(Report, "add"), data).status_code, 302)
+        report = Report.objects.get()
+        self.assertEqual(report.created_by, self.administrator)
+        self.assertEqual(report.result["visit_count"], 0)
+        self.assert_audit(report, AuditLog.Action.CREATE)
+        Visit.objects.create(patient=self.patient, visit_date=self.day)
+        self.assertEqual(self.client.post(self.url(Report, "change", report), data).status_code, 302)
+        report.refresh_from_db()
+        self.assertEqual(report.result["visit_count"], 1)
+        self.assert_audit(report, AuditLog.Action.UPDATE)
 
     def test_author_relations_can_be_set_null_technically(self):
         user = get_user_model().objects.create_user("autor-testowy")

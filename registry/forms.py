@@ -44,6 +44,19 @@ class ReportForm(ModelForm):
     class Meta:
         model = Report
         fields = ["name", "date_from", "date_to", "icd10"]
+        widgets = {
+            "date_from": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+            "date_to": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        }
+        help_texts = {
+            "date_from": "Początek okresu, włącznie.",
+            "date_to": "Koniec okresu, włącznie.",
+            "icd10": "Opcjonalnie. Rozpoznanie musi istnieć najpóźniej w dniu wizyty.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["icd10"].empty_label = "Wszystkie rozpoznania"
 
 
 class ScopedParentFormMixin:
