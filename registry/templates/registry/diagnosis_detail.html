@@ -1,0 +1,9 @@
+{% extends "registry/base.html" %}
+{% block title %}Rozpoznanie {{ object.icd10.code }} · Rejestr pacjentów{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">Rozpoznanie {{ object.icd10.code }}</h1>
+  {% include "registry/includes/patient_link.html" %}
+  <dl class="row"><dt class="col-sm-3">ICD-10</dt><dd class="col-sm-9">{{ object.icd10 }}</dd><dt class="col-sm-3">Data rozpoznania</dt><dd class="col-sm-9">{{ object.diagnosed_on|date:"d.m.Y" }}</dd></dl>
+  <h2 class="h5">Notatka</h2><p class="clinical-notes">{{ object.notes|default:"Brak notatki." }}</p>
+  <div class="d-flex gap-2 mt-4"><a class="btn btn-outline-primary" href="{% url 'registry:diagnosis-update' patient.pk object.pk %}">Edytuj rozpoznanie</a><a class="btn btn-outline-danger" href="{% url 'registry:diagnosis-delete' patient.pk object.pk %}">Usuń rozpoznanie</a></div>
+{% endblock %}

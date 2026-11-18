@@ -1,0 +1,1 @@
+{% if patient %}<p>Pacjent: <a href="{% url 'registry:patient-detail' patient.pk %}">{{ patient }}</a>{% if visit %} · <a href="{% url 'registry:visit-detail' patient.pk visit.pk %}">Wizyta {{ visit.visit_date|date:"d.m.Y" }}</a>{% endif %}</p>{% endif %}

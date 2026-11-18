@@ -1,7 +1,18 @@
 {% load django_bootstrap5 %}
 <form method="post">
   {% csrf_token %}
-  {% bootstrap_form form %}
+  {% if measurement_units %}
+    {% bootstrap_form form exclude="value" %}
+    <div class="d-flex gap-3 align-items-start">
+      <div class="flex-grow-1">{% bootstrap_field form.value %}</div>
+      <p class="pt-4"><span class="visually-hidden">Jednostka: </span><span id="measurement-unit" aria-live="polite">{{ selected_unit }}</span></p>
+    </div>
+  {% else %}
+    {% bootstrap_form form %}
+  {% endif %}
   {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-  <button type="submit" class="btn btn-primary">{{ submit_label|default:"Zapisz" }}</button>
+  <div class="d-flex flex-wrap gap-2">
+    <button type="submit" class="btn {{ submit_class|default:'btn-primary' }}">{{ submit_label|default:"Zapisz" }}</button>
+    {% if cancel_url %}<a class="btn btn-outline-secondary" href="{{ cancel_url }}">Anuluj</a>{% endif %}
+  </div>
 </form>

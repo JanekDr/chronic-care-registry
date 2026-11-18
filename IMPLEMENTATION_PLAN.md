@@ -4,7 +4,7 @@ Data przygotowania: 9 listopada 2026 r.
 
 Podstawa: [SPEC.md](SPEC.md). Specyfikacja pozostaje źródłem wymagań; ten dokument określa kolejność prac, zależności, rezultaty i sposób ich odbioru. Zmiana zakresu wymaga najpierw uzgodnienia i aktualizacji specyfikacji.
 
-Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r., etap 2 — 10 listopada 2026 r. Etapy 3–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
+Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r., etap 2 — 10 listopada 2026 r. Etap 3 — 18 listopada 2026 r. Etapy 4–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
 
 ## 1. Zasady realizacji
 
@@ -77,18 +77,20 @@ Odniesienie: SPEC §4, §8 i §10.
 
 Odniesienie: SPEC §3–5 i §9.
 
-- [ ] Przygotować listę pacjentów: wyszukiwanie po imieniu/nazwisku, filtr ICD-10, stronicowanie po 20 rekordów i stabilny porządek po nazwisku, imieniu oraz id.
-- [ ] Przygotować kartę pacjenta z danymi, rozpoznaniami i wizytami oraz formularze dodania i edycji pacjenta.
-- [ ] Dodać tworzenie, odczyt, edycję i usuwanie rozpoznań przypisanych do pacjenta.
-- [ ] Dodać tworzenie, szczegóły, edycję i usuwanie wizyt; autora ustawia serwer.
-- [ ] Dodać tworzenie, odczyt, edycję i usuwanie pomiarów z poziomu wizyty. Wyświetlać jednostkę właściwą dla rodzaju pomiaru.
-- [ ] Współdzielić szablony formularzy; stosować etykiety, opisy, błędy i standardowe widgety Django.
-- [ ] Wprowadzić potwierdzenie usuwania w HTML. `ProtectedError` przekładać na czytelny komunikat z przyczyną blokady, bez błędu serwera.
-- [ ] Zapisywać odczyty list/szczegółów i operacje CRUD w audycie, bez treści notatek i danych odpowiedzi. Zmiana wraz z audytem ma być atomowa.
-- [ ] Sprawdzić, że notatki są wyświetlane jako zwykły, escapowany tekst, a niedozwolone żądanie nie zmienia danych.
-- [ ] Dodać testy formularzy i widoków dla podstawowej ścieżki, błędów walidacji, uprawnień, CSRF i blokad usunięcia.
+- [x] Przygotować listę pacjentów: wyszukiwanie po imieniu/nazwisku, filtr ICD-10, stronicowanie po 20 rekordów i stabilny porządek po nazwisku, imieniu oraz id.
+- [x] Przygotować kartę pacjenta z danymi, rozpoznaniami i wizytami oraz formularze dodania i edycji pacjenta.
+- [x] Dodać tworzenie, odczyt, edycję i usuwanie rozpoznań przypisanych do pacjenta.
+- [x] Dodać tworzenie, szczegóły, edycję i usuwanie wizyt; autora ustawia serwer.
+- [x] Dodać tworzenie, odczyt, edycję i usuwanie pomiarów z poziomu wizyty. Wyświetlać jednostkę właściwą dla rodzaju pomiaru.
+- [x] Współdzielić szablony formularzy; stosować etykiety, opisy, błędy i standardowe widgety Django.
+- [x] Wprowadzić potwierdzenie usuwania w HTML. `ProtectedError` przekładać na czytelny komunikat z przyczyną blokady, bez błędu serwera.
+- [x] Zapisywać odczyty list/szczegółów i operacje CRUD w audycie, bez treści notatek i danych odpowiedzi. Zmiana wraz z audytem ma być atomowa.
+- [x] Sprawdzić, że notatki są wyświetlane jako zwykły, escapowany tekst, a niedozwolone żądanie nie zmienia danych.
+- [x] Dodać testy formularzy i widoków dla podstawowej ścieżki, błędów walidacji, uprawnień, CSRF i blokad usunięcia.
 
 **Kryterium odbioru:** personel wykonuje pełną ścieżkę dodania pacjenta, rozpoznania, wizyty i obu rodzajów pomiarów; może je poprawić i usuwać w kolejności zgodnej z zależnościami; odpowiednie zdarzenia są w audycie.
+
+**Wynik odbioru, 18 listopada 2026 r.:** 79 testów zakończonych powodzeniem (62 dotychczasowe i 17 nowych scenariuszy HTML); `check`, `makemigrations --check --dry-run` i `pip check` bez błędów. Pełna ścieżka tworzenia, odczytu, edycji i usuwania pacjenta, rozpoznania, wizyty oraz obu rodzajów pomiarów przechodzi testy, także z rzeczywistą kontrolą CSRF. Sprawdzono walidację, wszystkie role i adresy widoków, filtry i paginację po 20 rekordów, stabilny porządek, ochronę powiązań ustalanych z URL, autora wizyty ustawianego przez serwer, blokady usunięcia, escapowanie notatek, powiązania etykiet/opisów/błędów oraz wycofanie create/update/delete każdego modelu po błędzie audytu. Odczyty list/szczegółów i zmiany trafiają do audytu wyłącznie jako metadane. Na osobnej bazie syntetycznej wykonano migracje i `seed_demo`; w przeglądarce na koncie personelu sprawdzono listę, kartę pacjenta, wizytę z pomiarami i formularz pomiaru, w tym zmianę jednostki `mg/dL`/`kg`. Testy automatyczne obejmują pełny CRUD; w przeglądarce wykonano tylko wymieniony przegląd ekranów. Pełny odbiór dostępności i ręczny scenariusz całości pozostają w etapie 7. README opisuje działający interfejs. Nie zmieniono modeli ani migracji; raporty pozostają zakresem etapu 4, API i eksport FHIR — etapów 5–6.
 
 ## 6. Etap 4 — raporty i ich zapis
 

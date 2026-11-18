@@ -1,8 +1,42 @@
 {% extends "registry/base.html" %}
 {% block title %}Pacjenci · Rejestr pacjentów{% endblock %}
 {% block content %}
-  <h1 class="h2 mb-4">Pacjenci</h1>
-  <div class="border rounded bg-white p-4">
-    <p class="mb-0">Lista pacjentów jest obecnie niedostępna.</p>
+  <div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
+    <h1 class="h2 mb-0">Pacjenci</h1>
+    <a class="btn btn-primary" href="{% url 'registry:patient-create' %}">Dodaj pacjenta</a>
   </div>
+  <form method="get" class="row g-3 border rounded bg-white p-3 mb-4" role="search" aria-label="Wyszukiwanie pacjentów">
+    <div class="col-md-5">
+      <label class="form-label" for="patient-search">Imię lub nazwisko</label>
+      <input type="search" class="form-control" id="patient-search" name="search" value="{{ search }}">
+    </div>
+    <div class="col-md-5">
+      <label class="form-label" for="patient-icd10">Rozpoznanie ICD-10</label>
+      <select class="form-select" id="patient-icd10" name="icd10">
+        <option value="">Wszystkie rozpoznania</option>
+        {% for code in icd10_codes %}<option value="{{ code.code }}"{% if selected_icd10 == code.code %} selected{% endif %}>{{ code }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary" type="submit">Szukaj</button></div>
+    <div class="col-12"><a href="{% url 'registry:patient-list' %}">Wyczyść filtry</a></div>
+  </form>
+  <p>Liczba pacjentów: {{ paginator.count }}</p>
+  <div class="table-responsive bg-white border rounded">
+    <table class="table mb-0">
+      <caption class="visually-hidden">Pacjenci spełniający kryteria wyszukiwania</caption>
+      <thead><tr><th scope="col">Nazwisko i imię</th><th scope="col">Data urodzenia</th><th scope="col">Płeć</th></tr></thead>
+      <tbody>
+        {% for patient in object_list %}
+          <tr><th scope="row"><a href="{% url 'registry:patient-detail' patient.pk %}">{{ patient }}</a></th><td>{{ patient.birth_date|date:"d.m.Y" }}</td><td>{{ patient.get_gender_display }}</td></tr>
+        {% empty %}<tr><td colspan="3">Brak pacjentów spełniających kryteria wyszukiwania.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if is_paginated %}
+    <nav class="mt-4 d-flex flex-wrap gap-3 align-items-center" aria-label="Strony listy pacjentów">
+      {% if page_obj.has_previous %}<a href="?{{ pagination_query }}&amp;page={{ page_obj.previous_page_number }}" rel="prev">Poprzednia</a>{% endif %}
+      <span aria-current="page">Strona {{ page_obj.number }} z {{ paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a href="?{{ pagination_query }}&amp;page={{ page_obj.next_page_number }}" rel="next">Następna</a>{% endif %}
+    </nav>
+  {% endif %}
 {% endblock %}

@@ -1,0 +1,8 @@
+{% extends "registry/base.html" %}
+{% block title %}Pomiar · Rejestr pacjentów{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">{{ object.get_kind_display }}</h1>
+  {% include "registry/includes/patient_link.html" %}
+  <p>Wartość: <strong>{{ object.value }} {{ object.unit }}</strong></p>
+  <div class="d-flex gap-2 mt-4"><a class="btn btn-outline-primary" href="{% url 'registry:measurement-update' visit.pk object.pk %}">Edytuj pomiar</a><a class="btn btn-outline-danger" href="{% url 'registry:measurement-delete' visit.pk object.pk %}">Usuń pomiar</a></div>
+{% endblock %}

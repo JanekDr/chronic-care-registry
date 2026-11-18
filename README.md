@@ -5,14 +5,15 @@ a kolejność prac i kryteria odbioru — [IMPLEMENTATION_PLAN.md](IMPLEMENTATIO
 
 ## Aktualny stan
 
-Ukończono etapy 1–2: projekt Django, sesje, role, lokalny Bootstrap, audyt,
-modele kliniczne i raportu, wspólna walidacja, administracja i `seed_demo`.
+Ukończono etapy 1–3: projekt Django, sesje, role, lokalny Bootstrap, audyt,
+modele kliniczne i raportu, wspólna walidacja, administracja, `seed_demo`
+oraz pełna ścieżka HTML pacjent → rozpoznanie → wizyta → pomiar.
 Administrator może zarządzać pacjentami, rozpoznaniami, wizytami, pomiarami,
 słownikiem oraz kontami przez Django Admin. Raporty w administracji mają na razie
 wyłącznie odczyt i usuwanie; ich zapis z przeliczeniem powstanie w etapie 4.
-Strony **Pacjenci** i **Raporty** nadal są chronionymi stronami zastępczymi.
-Interfejs CRUD personelu, obliczenia raportów, REST API, FHIR i kontener należą
-do następnych etapów.
+Personel i administrator mogą przeglądać, dodawać, poprawiać i usuwać dane
+kliniczne przez **Pacjentów**. **Raporty** pozostają chronioną stroną zastępczą.
+Obliczenia raportów, REST API, FHIR i kontener należą do następnych etapów.
 
 ## Uruchomienie lokalne — Windows / PowerShell
 
@@ -116,6 +117,29 @@ Ten wariant służy lokalnej demonstracji HTTP na `127.0.0.1`.
 Wariant sieciowy z HTTPS i bezpiecznymi ciasteczkami oraz kontener są częścią
 dalszych etapów planu.
 
+### Praca z rejestrem
+
+1. W **Pacjentach** wyszukaj imię lub nazwisko i opcjonalnie wybierz ICD-10.
+   Wyszukiwanie obejmuje także kilka członów, np. `Anna Testowa`.
+   Wyniki mają po 20 rekordów na stronę, w kolejności nazwisko, imię i id;
+   przejście na następną stronę zachowuje filtry.
+2. Wybierz **Dodaj pacjenta**, zapisz dane i przejdź do jego karty.
+3. Na karcie wybierz **Dodaj rozpoznanie**. Lista pokazuje kod i nazwę ICD-10;
+   ten sam kod można przypisać pacjentowi tylko raz.
+4. Wybierz **Dodaj wizytę**, podaj datę i opcjonalną notatkę.
+   Autor jest ustawiany z zalogowanego konta i nie zmienia się przy edycji.
+5. Na stronie wizyty wybierz **Dodaj pomiar**: glukoza we krwi (`mg/dL`)
+   albo masa ciała (`kg`). Jednostka obok wartości reaguje na wybór rodzaju.
+   Nazwy opcji i opis wartości zawierają jednostki również bez JavaScript.
+6. Linki w tabelach prowadzą do szczegółów. Każdy rekord ma edycję i stronę
+   potwierdzenia usunięcia; sam GET nie usuwa danych. Najpierw usuwa się
+   pomiary, następnie wizyty i rozpoznania, a na końcu pacjenta.
+   Próba usunięcia rekordu z zależnościami wyświetla powód blokady.
+
+Pacjent rozpoznania/wizyty oraz wizyta pomiaru wynikają z adresu strony.
+Interfejs nie pozwala przenosić tych rekordów między kartami przez formularz.
+Notatki są zwykłym, escapowanym tekstem z zachowaniem podziału na wiersze.
+
 ### 5. Własne konto personelu
 
 W Django Admin utwórz grupę o dokładnej nazwie `personel`, następnie użytkownika
@@ -142,7 +166,12 @@ blokuje usuwanie kont; konta autorów należy dezaktywować przez pole „Aktywn
   słownika, kont i grup, w tym zmiany hasła oraz przypisania grup użytkownikowi.
   Zapis i audyt są atomowe. `seed_demo` audytuje tylko nowo utworzone rekordy.
   Akcje zbiorcze są wyłączone; dane usuwa się pojedynczo z potwierdzeniem
-  i ochroną zależności. Audyt odczytów rejestru powstanie wraz z widokami danych.
+  i ochroną zależności. Widoki HTML rejestrują odczyty list i szczegółów,
+  w tym listy rozpoznań/wizyt na karcie pacjenta, pomiary na stronie wizyty
+  oraz wyświetlany słownik ICD-10. Otwarcie formularza edycji lub potwierdzenia
+  usunięcia zapisuje odczyt obiektu. CRUD zapisuje jeden wpis zmiany danego
+  rekordu w tej samej transakcji co dane; błąd audytu wycofuje zapis/usunięcie.
+  Parametry wyszukiwania, notatki i zawartość odpowiedzi nie trafiają do audytu.
 
 ## Wspólna walidacja
 
@@ -160,7 +189,7 @@ Relacje kliniczne i `Report.icd10` używają `PROTECT`; autorzy mają `SET_NULL`
 Pomiar przechowuje tylko wizytę, rodzaj i Decimal, a jednostka, LOINC i kategoria
 FHIR wynikają z `Measurement.DEFINITIONS`.
 
-## Sprawdzenie etapów 1–2
+## Sprawdzenie etapów 1–3
 
 W sesji z ustawionym `SECRET_KEY`:
 
@@ -179,6 +208,12 @@ Dodatkowo sprawdzają modele i formularze: daty, zmianę daty urodzenia i pacjen
 spacje, duplikaty, istnienie FK, długości notatek, precyzję Decimal, NaN/
 nieskończoności, ochronę relacji, autora ustawianego przez serwer, audyt zmian
 w administracji oraz powtarzalność inicjalizacji z zachowaniem zmian użytkownika.
+Testy HTML obejmują pełny cykl CRUD (oba rodzaje pomiarów), wyszukiwanie,
+filtry, stabilne sortowanie, paginację, walidację, wszystkie role i ścieżki,
+nieistniejące lub niespójne adresy, blokady usunięcia, escapowanie notatek,
+audyt odczytów i zmian oraz atomowość create/update/delete każdego modelu.
+Osobny scenariusz z `Client(enforce_csrf_checks=True)` sprawdza brak tokenu
+na wszystkich formularzach i pełną ścieżkę z poprawnym tokenem.
 Sprawdzenie HTML nie zastępuje pełnego odbioru dostępności przewidzianego w etapie 7.
 
 ## Źródła techniczne

@@ -1,0 +1,20 @@
+{% extends "registry/base.html" %}
+{% block title %}Wizyta {{ object.visit_date|date:"d.m.Y" }} · Rejestr pacjentów{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">Wizyta {{ object.visit_date|date:"d.m.Y" }}</h1>
+  {% include "registry/includes/patient_link.html" %}
+  <p>Autor: {{ object.created_by.get_username|default:"—" }}</p>
+  <h2 class="h5">Notatka</h2><p class="clinical-notes">{{ object.notes|default:"Brak notatki." }}</p>
+  <div class="d-flex gap-2 mt-4 mb-5"><a class="btn btn-outline-primary" href="{% url 'registry:visit-update' patient.pk object.pk %}">Edytuj wizytę</a><a class="btn btn-outline-danger" href="{% url 'registry:visit-delete' patient.pk object.pk %}">Usuń wizytę</a></div>
+  <section aria-labelledby="measurements-title">
+    <div class="d-flex flex-wrap justify-content-between gap-3 mb-3"><h2 class="h4" id="measurements-title">Pomiary</h2><a class="btn btn-primary btn-sm" href="{% url 'registry:measurement-create' object.pk %}">Dodaj pomiar</a></div>
+    <div class="table-responsive bg-white border rounded"><table class="table mb-0">
+      <caption class="visually-hidden">Pomiary z wizyty {{ object.visit_date|date:"d.m.Y" }}</caption>
+      <thead><tr><th scope="col">Rodzaj</th><th scope="col">Wartość</th><th scope="col">Jednostka</th><th scope="col">Działania</th></tr></thead>
+      <tbody>{% for measurement in measurements %}<tr>
+        <th scope="row"><a href="{% url 'registry:measurement-detail' object.pk measurement.pk %}">{{ measurement.get_kind_display }}</a></th><td>{{ measurement.value }}</td><td>{{ measurement.unit }}</td>
+        <td><a href="{% url 'registry:measurement-update' object.pk measurement.pk %}" aria-label="Edytuj pomiar {{ measurement.get_kind_display }}, numer {{ measurement.pk }}">Edytuj</a> · <a href="{% url 'registry:measurement-delete' object.pk measurement.pk %}" aria-label="Usuń pomiar {{ measurement.get_kind_display }}, numer {{ measurement.pk }}">Usuń</a></td>
+      </tr>{% empty %}<tr><td colspan="4">Brak pomiarów.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+{% endblock %}

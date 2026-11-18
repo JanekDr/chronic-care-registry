@@ -1,0 +1,12 @@
+{% extends "registry/base.html" %}
+{% block title %}{{ page_title }} · Rejestr pacjentów{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">{{ page_title }}</h1>
+  {% include "registry/includes/patient_link.html" %}
+  <div class="border rounded bg-white p-4 form-panel">
+    <p>Czy na pewno chcesz usunąć ten rekord?</p>
+    <p><strong>{% if object.kind %}{{ object.get_kind_display }}: {{ object.value }} {{ object.unit }}{% elif object.icd10 %}{{ object.icd10 }} · {{ object.diagnosed_on|date:"d.m.Y" }}{% elif object.visit_date %}Wizyta {{ object.visit_date|date:"d.m.Y" }}{% else %}{{ object }}{% endif %}</strong></p>
+    <p>Tej operacji nie można cofnąć.</p>
+    {% include "registry/includes/form.html" with submit_label="Usuń" submit_class="btn-danger" %}
+  </div>
+{% endblock %}

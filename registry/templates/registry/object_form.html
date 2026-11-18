@@ -1,0 +1,14 @@
+{% extends "registry/base.html" %}
+{% load static %}
+{% block title %}{{ page_title }} · Rejestr pacjentów{% endblock %}
+{% block content %}
+  <h1 class="h2 mb-4">{{ page_title }}</h1>
+  {% include "registry/includes/patient_link.html" %}
+  <div class="border rounded bg-white p-4 form-panel">
+    {% include "registry/includes/form.html" %}
+  </div>
+  {% if measurement_units %}
+    {{ measurement_units|json_script:"measurement-units" }}
+    <script src="{% static 'registry/measurement-form.js' %}" defer></script>
+  {% endif %}
+{% endblock %}
