@@ -31,5 +31,6 @@ urlpatterns = [
         name="login",
     ),
     path("accounts/logout/", LogoutView.as_view(), name="logout"),
+    path("api/", include("registry.api_urls")),
     path("", include("registry.urls")),
 ]

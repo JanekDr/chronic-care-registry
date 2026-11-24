@@ -1,0 +1,2584 @@
+openapi: 3.0.3
+info:
+  title: Rejestr pacjentów z chorobą przewlekłą
+  version: 1.0.0
+  description: |-
+    Dostęp mają aktywne konta z grupy `personel` oraz superużytkownicy. Zaloguj się przez `/accounts/login/` i zachowaj ciasteczka `sessionid` oraz `csrftoken`. Przy POST, PUT, PATCH i DELETE prześlij wartość `csrftoken` także w nagłówku `X-CSRFToken`. Wylogowanie wymaga POST na `/accounts/logout/` z tokenem CSRF.
+
+    Listy mają po 20 rekordów na stronę. Pacjenci są sortowani według nazwiska, imienia i ID, wizyty według daty malejąco i ID rosnąco, a pozostałe zasoby według ID.
+paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: Pobierz opis OpenAPI w formacie JSON.
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: Dokument OpenAPI 3.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+  /api/v1/diagnoses/:
+    get:
+      operationId: diagnoses_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: patient
+        schema:
+          type: integer
+          minimum: 1
+        description: Identyfikator pacjenta.
+      tags:
+      - diagnoses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDiagnosisList'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+          description: Błąd walidacji parametrów listy.
+    post:
+      operationId: diagnoses_create
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      tags:
+      - diagnoses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagnosisRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Diagnosis'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+  /api/v1/diagnoses/{id}/:
+    get:
+      operationId: diagnoses_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Rozpoznanie.
+        required: true
+      tags:
+      - diagnoses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Diagnosis'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    put:
+      operationId: diagnoses_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Rozpoznanie.
+        required: true
+      tags:
+      - diagnoses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagnosisRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Diagnosis'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    patch:
+      operationId: diagnoses_partial_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Rozpoznanie.
+        required: true
+      tags:
+      - diagnoses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDiagnosisRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Diagnosis'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    delete:
+      operationId: diagnoses_destroy
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Rozpoznanie.
+        required: true
+      tags:
+      - diagnoses
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+  /api/v1/icd10/:
+    get:
+      operationId: icd10_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Fragment kodu lub nazwy w słowniku ICD-10.
+      tags:
+      - icd10
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedICD10CodeList'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+          description: Błąd walidacji parametrów listy.
+  /api/v1/icd10/{id}/:
+    get:
+      operationId: icd10_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Kod ICD-10.
+        required: true
+      tags:
+      - icd10
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ICD10Code'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+  /api/v1/measurements/:
+    get:
+      operationId: measurements_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: visit
+        schema:
+          type: integer
+          minimum: 1
+        description: Identyfikator wizyty.
+      tags:
+      - measurements
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMeasurementList'
+              examples:
+                ZapisanyPomiarGlukozy:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?page=4
+                    previous: http://api.example.org/accounts/?page=2
+                    results:
+                    - visit: 1
+                      kind: blood_glucose
+                      value: '100.00'
+                      id: 1
+                      created_at: '2026-11-24T10:30:00+01:00'
+                      updated_at: '2026-11-24T10:30:00+01:00'
+                  summary: Zapisany pomiar glukozy
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+          description: Błąd walidacji parametrów listy.
+    post:
+      operationId: measurements_create
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      tags:
+      - measurements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeasurementRequest'
+            examples:
+              PomiarGlukozy:
+                value:
+                  visit: 1
+                  kind: blood_glucose
+                  value: '100.00'
+                summary: Pomiar glukozy
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Measurement'
+              examples:
+                ZapisanyPomiarGlukozy:
+                  value:
+                    visit: 1
+                    kind: blood_glucose
+                    value: '100.00'
+                    id: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                  summary: Zapisany pomiar glukozy
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+  /api/v1/measurements/{id}/:
+    get:
+      operationId: measurements_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pomiar.
+        required: true
+      tags:
+      - measurements
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Measurement'
+              examples:
+                ZapisanyPomiarGlukozy:
+                  value:
+                    visit: 1
+                    kind: blood_glucose
+                    value: '100.00'
+                    id: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                  summary: Zapisany pomiar glukozy
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    put:
+      operationId: measurements_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pomiar.
+        required: true
+      tags:
+      - measurements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeasurementRequest'
+            examples:
+              PomiarGlukozy:
+                value:
+                  visit: 1
+                  kind: blood_glucose
+                  value: '100.00'
+                summary: Pomiar glukozy
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Measurement'
+              examples:
+                ZapisanyPomiarGlukozy:
+                  value:
+                    visit: 1
+                    kind: blood_glucose
+                    value: '100.00'
+                    id: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                  summary: Zapisany pomiar glukozy
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    patch:
+      operationId: measurements_partial_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pomiar.
+        required: true
+      tags:
+      - measurements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMeasurementRequest'
+            examples:
+              PomiarGlukozy:
+                value:
+                  visit: 1
+                  kind: blood_glucose
+                  value: '100.00'
+                summary: Pomiar glukozy
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Measurement'
+              examples:
+                ZapisanyPomiarGlukozy:
+                  value:
+                    visit: 1
+                    kind: blood_glucose
+                    value: '100.00'
+                    id: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                  summary: Zapisany pomiar glukozy
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    delete:
+      operationId: measurements_destroy
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pomiar.
+        required: true
+      tags:
+      - measurements
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+  /api/v1/patients/:
+    get:
+      operationId: patients_list
+      parameters:
+      - in: query
+        name: icd10
+        schema:
+          type: string
+        description: Dokładny kod rozpoznania pacjenta, np. I10.
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Fragment imienia lub nazwiska. Każdy człon musi pasować do imienia
+          albo nazwiska.
+      tags:
+      - patients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPatientList'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+          description: Błąd walidacji parametrów listy.
+    post:
+      operationId: patients_create
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      tags:
+      - patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+  /api/v1/patients/{id}/:
+    get:
+      operationId: patients_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pacjent.
+        required: true
+      tags:
+      - patients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    put:
+      operationId: patients_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pacjent.
+        required: true
+      tags:
+      - patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    patch:
+      operationId: patients_partial_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pacjent.
+        required: true
+      tags:
+      - patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPatientRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    delete:
+      operationId: patients_destroy
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Pacjent.
+        required: true
+      tags:
+      - patients
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+              examples:
+                PowiązaneDane:
+                  value:
+                    detail: Pacjent ma przypisane rozpoznania lub wizyty. Najpierw
+                      usuń rozpoznania, pomiary i wizyty.
+                  summary: Powiązane dane
+          description: Pacjent ma przypisane rozpoznania lub wizyty. Najpierw usuń
+            rozpoznania, pomiary i wizyty.
+  /api/v1/reports/:
+    get:
+      operationId: reports_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReportList'
+              examples:
+                ZapisanyRaportDlaI10:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?page=4
+                    previous: http://api.example.org/accounts/?page=2
+                    results:
+                    - name: I10 październik
+                      date_from: '2026-10-01'
+                      date_to: '2026-10-31'
+                      icd10: 1
+                      id: 1
+                      created_by: 1
+                      created_at: '2026-11-24T10:30:00+01:00'
+                      updated_at: '2026-11-24T10:30:00+01:00'
+                      result:
+                        patient_count: 1
+                        visit_count: 2
+                        measurements:
+                        - kind: blood_glucose
+                          unit: mg/dL
+                          count: 2
+                          avg: '110.00'
+                          min: '100.00'
+                          max: '120.00'
+                        - kind: body_weight
+                          unit: kg
+                          count: 0
+                          avg: null
+                          min: null
+                          max: null
+                  summary: Zapisany raport dla I10
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    post:
+      operationId: reports_create
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      tags:
+      - reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+            examples:
+              RaportDlaI10:
+                value:
+                  name: I10 październik
+                  date_from: '2026-10-01'
+                  date_to: '2026-10-31'
+                  icd10: 1
+                summary: Raport dla I10
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+              examples:
+                ZapisanyRaportDlaI10:
+                  value:
+                    name: I10 październik
+                    date_from: '2026-10-01'
+                    date_to: '2026-10-31'
+                    icd10: 1
+                    id: 1
+                    created_by: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                    result:
+                      patient_count: 1
+                      visit_count: 2
+                      measurements:
+                      - kind: blood_glucose
+                        unit: mg/dL
+                        count: 2
+                        avg: '110.00'
+                        min: '100.00'
+                        max: '120.00'
+                      - kind: body_weight
+                        unit: kg
+                        count: 0
+                        avg: null
+                        min: null
+                        max: null
+                  summary: Zapisany raport dla I10
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+  /api/v1/reports/{id}/:
+    get:
+      operationId: reports_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Raport.
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+              examples:
+                ZapisanyRaportDlaI10:
+                  value:
+                    name: I10 październik
+                    date_from: '2026-10-01'
+                    date_to: '2026-10-31'
+                    icd10: 1
+                    id: 1
+                    created_by: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                    result:
+                      patient_count: 1
+                      visit_count: 2
+                      measurements:
+                      - kind: blood_glucose
+                        unit: mg/dL
+                        count: 2
+                        avg: '110.00'
+                        min: '100.00'
+                        max: '120.00'
+                      - kind: body_weight
+                        unit: kg
+                        count: 0
+                        avg: null
+                        min: null
+                        max: null
+                  summary: Zapisany raport dla I10
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    put:
+      operationId: reports_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Raport.
+        required: true
+      tags:
+      - reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+            examples:
+              RaportDlaI10:
+                value:
+                  name: I10 październik
+                  date_from: '2026-10-01'
+                  date_to: '2026-10-31'
+                  icd10: 1
+                summary: Raport dla I10
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+              examples:
+                ZapisanyRaportDlaI10:
+                  value:
+                    name: I10 październik
+                    date_from: '2026-10-01'
+                    date_to: '2026-10-31'
+                    icd10: 1
+                    id: 1
+                    created_by: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                    result:
+                      patient_count: 1
+                      visit_count: 2
+                      measurements:
+                      - kind: blood_glucose
+                        unit: mg/dL
+                        count: 2
+                        avg: '110.00'
+                        min: '100.00'
+                        max: '120.00'
+                      - kind: body_weight
+                        unit: kg
+                        count: 0
+                        avg: null
+                        min: null
+                        max: null
+                  summary: Zapisany raport dla I10
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    patch:
+      operationId: reports_partial_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Raport.
+        required: true
+      tags:
+      - reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReportRequest'
+            examples:
+              RaportDlaI10:
+                value:
+                  name: I10 październik
+                  date_from: '2026-10-01'
+                  date_to: '2026-10-31'
+                  icd10: 1
+                summary: Raport dla I10
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+              examples:
+                ZapisanyRaportDlaI10:
+                  value:
+                    name: I10 październik
+                    date_from: '2026-10-01'
+                    date_to: '2026-10-31'
+                    icd10: 1
+                    id: 1
+                    created_by: 1
+                    created_at: '2026-11-24T10:30:00+01:00'
+                    updated_at: '2026-11-24T10:30:00+01:00'
+                    result:
+                      patient_count: 1
+                      visit_count: 2
+                      measurements:
+                      - kind: blood_glucose
+                        unit: mg/dL
+                        count: 2
+                        avg: '110.00'
+                        min: '100.00'
+                        max: '120.00'
+                      - kind: body_weight
+                        unit: kg
+                        count: 0
+                        avg: null
+                        min: null
+                        max: null
+                  summary: Zapisany raport dla I10
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    delete:
+      operationId: reports_destroy
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Raport.
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+  /api/v1/visits/:
+    get:
+      operationId: visits_list
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Pierwszy uwzględniony dzień wizyt w formacie YYYY-MM-DD.
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Ostatni uwzględniony dzień wizyt w formacie YYYY-MM-DD.
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: patient
+        schema:
+          type: integer
+          minimum: 1
+        description: Identyfikator pacjenta.
+      tags:
+      - visits
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVisitList'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+          description: Błąd walidacji parametrów listy.
+    post:
+      operationId: visits_create
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      tags:
+      - visits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+  /api/v1/visits/{id}/:
+    get:
+      operationId: visits_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Wizyta.
+        required: true
+      tags:
+      - visits
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    put:
+      operationId: visits_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Wizyta.
+        required: true
+      tags:
+      - visits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    patch:
+      operationId: visits_partial_update
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Wizyta.
+        required: true
+      tags:
+      - visits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVisitRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visit'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  oneOf:
+                  - type: array
+                    items:
+                      type: string
+                  - type: string
+          description: Błąd walidacji pól. Błąd parsowania treści jest zwracany w
+            polu `detail`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Treść żądania musi być w formacie JSON.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+    delete:
+      operationId: visits_destroy
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: Token z ciasteczka `csrftoken` aktualnego po zalogowaniu.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Wizyta.
+        required: true
+      tags:
+      - visits
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+              examples:
+                PowiązaneDane:
+                  value:
+                    detail: Wizyta ma przypisane pomiary. Najpierw usuń pomiary.
+                  summary: Powiązane dane
+          description: Wizyta ma przypisane pomiary. Najpierw usuń pomiary.
+components:
+  schemas:
+    Diagnosis:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          type: integer
+          description: Identyfikator pacjenta.
+        icd10:
+          type: integer
+          description: Identyfikator wpisu w słowniku ICD-10.
+        diagnosed_on:
+          type: string
+          format: date
+          title: Data rozpoznania
+        notes:
+          type: string
+          default: ''
+          title: Notatka
+          maxLength: 1000
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Utworzono
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Zmieniono
+      required:
+      - created_at
+      - diagnosed_on
+      - icd10
+      - id
+      - patient
+      - updated_at
+    DiagnosisRequest:
+      type: object
+      properties:
+        patient:
+          type: integer
+          description: Identyfikator pacjenta.
+        icd10:
+          type: integer
+          description: Identyfikator wpisu w słowniku ICD-10.
+        diagnosed_on:
+          type: string
+          format: date
+          title: Data rozpoznania
+        notes:
+          type: string
+          default: ''
+          title: Notatka
+          maxLength: 1000
+      required:
+      - diagnosed_on
+      - icd10
+      - patient
+    ErrorDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    GenderEnum:
+      enum:
+      - female
+      - male
+      - other
+      type: string
+      description: |-
+        * `female` - Kobieta
+        * `male` - Mężczyzna
+        * `other` - Inna
+    ICD10Code:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+          title: Kod ICD-10
+        name:
+          type: string
+          readOnly: true
+          title: Nazwa
+      required:
+      - code
+      - id
+      - name
+    KindEnum:
+      enum:
+      - blood_glucose
+      - body_weight
+      type: string
+      description: |-
+        * `blood_glucose` - Glukoza we krwi
+        * `body_weight` - Masa ciała
+    Measurement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        visit:
+          type: integer
+          description: Identyfikator wizyty, z której wynikają pacjent i data pomiaru.
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          title: Rodzaj
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          title: Wartość
+          description: Dodatnia wartość z dokładnością do dwóch miejsc. Glukoza w
+            mg/dL, masa ciała w kg.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Utworzono
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Zmieniono
+      required:
+      - created_at
+      - id
+      - kind
+      - updated_at
+      - value
+      - visit
+    MeasurementRequest:
+      type: object
+      properties:
+        visit:
+          type: integer
+          description: Identyfikator wizyty, z której wynikają pacjent i data pomiaru.
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          title: Rodzaj
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          title: Wartość
+          description: Dodatnia wartość z dokładnością do dwóch miejsc. Glukoza w
+            mg/dL, masa ciała w kg.
+      required:
+      - kind
+      - value
+      - visit
+    MeasurementStatistics:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        unit:
+          $ref: '#/components/schemas/UnitEnum'
+        count:
+          type: integer
+          minimum: 0
+        avg:
+          type: string
+          nullable: true
+          description: Średnia z dokładnością do dwóch miejsc po przecinku.
+        min:
+          type: string
+          nullable: true
+          description: Najmniejsza wartość z dokładnością do dwóch miejsc po przecinku.
+        max:
+          type: string
+          nullable: true
+          description: Największa wartość z dokładnością do dwóch miejsc po przecinku.
+      required:
+      - avg
+      - count
+      - kind
+      - max
+      - min
+      - unit
+    MeasurementStatisticsRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        unit:
+          $ref: '#/components/schemas/UnitEnum'
+        count:
+          type: integer
+          minimum: 0
+        avg:
+          type: string
+          nullable: true
+          minLength: 1
+          description: Średnia z dokładnością do dwóch miejsc po przecinku.
+        min:
+          type: string
+          nullable: true
+          minLength: 1
+          description: Najmniejsza wartość z dokładnością do dwóch miejsc po przecinku.
+        max:
+          type: string
+          nullable: true
+          minLength: 1
+          description: Największa wartość z dokładnością do dwóch miejsc po przecinku.
+      required:
+      - avg
+      - count
+      - kind
+      - max
+      - min
+      - unit
+    PaginatedDiagnosisList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Diagnosis'
+    PaginatedICD10CodeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ICD10Code'
+    PaginatedMeasurementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Measurement'
+    PaginatedPatientList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+    PaginatedReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Report'
+    PaginatedVisitList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Visit'
+    PatchedDiagnosisRequest:
+      type: object
+      properties:
+        patient:
+          type: integer
+          description: Identyfikator pacjenta.
+        icd10:
+          type: integer
+          description: Identyfikator wpisu w słowniku ICD-10.
+        diagnosed_on:
+          type: string
+          format: date
+          title: Data rozpoznania
+        notes:
+          type: string
+          default: ''
+          title: Notatka
+          maxLength: 1000
+    PatchedMeasurementRequest:
+      type: object
+      properties:
+        visit:
+          type: integer
+          description: Identyfikator wizyty, z której wynikają pacjent i data pomiaru.
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/KindEnum'
+          title: Rodzaj
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+          title: Wartość
+          description: Dodatnia wartość z dokładnością do dwóch miejsc. Glukoza w
+            mg/dL, masa ciała w kg.
+    PatchedPatientRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          title: Imię
+          maxLength: 80
+        last_name:
+          type: string
+          minLength: 1
+          title: Nazwisko
+          maxLength: 80
+        birth_date:
+          type: string
+          format: date
+          title: Data urodzenia
+        gender:
+          allOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          title: Płeć
+    PatchedReportRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nazwa
+          maxLength: 100
+        date_from:
+          type: string
+          format: date
+          title: Od
+          description: Początek okresu włącznie.
+        date_to:
+          type: string
+          format: date
+          title: Do
+          description: Koniec okresu włącznie.
+        icd10:
+          type: integer
+          nullable: true
+          description: Identyfikator wpisu w słowniku ICD-10. Null obejmuje wszystkie
+            rozpoznania.
+    PatchedVisitRequest:
+      type: object
+      properties:
+        patient:
+          type: integer
+          description: Identyfikator pacjenta.
+        visit_date:
+          type: string
+          format: date
+          title: Data wizyty
+        notes:
+          type: string
+          default: ''
+          title: Notatka
+          maxLength: 2000
+    Patient:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          title: Imię
+          maxLength: 80
+        last_name:
+          type: string
+          title: Nazwisko
+          maxLength: 80
+        birth_date:
+          type: string
+          format: date
+          title: Data urodzenia
+        gender:
+          allOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          title: Płeć
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Utworzono
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Zmieniono
+      required:
+      - birth_date
+      - created_at
+      - first_name
+      - gender
+      - id
+      - last_name
+      - updated_at
+    PatientRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          title: Imię
+          maxLength: 80
+        last_name:
+          type: string
+          minLength: 1
+          title: Nazwisko
+          maxLength: 80
+        birth_date:
+          type: string
+          format: date
+          title: Data urodzenia
+        gender:
+          allOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          title: Płeć
+      required:
+      - birth_date
+      - first_name
+      - gender
+      - last_name
+    Report:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Nazwa
+          maxLength: 100
+        date_from:
+          type: string
+          format: date
+          title: Od
+          description: Początek okresu włącznie.
+        date_to:
+          type: string
+          format: date
+          title: Do
+          description: Koniec okresu włącznie.
+        icd10:
+          type: integer
+          nullable: true
+          description: Identyfikator wpisu w słowniku ICD-10. Null obejmuje wszystkie
+            rozpoznania.
+        result:
+          allOf:
+          - $ref: '#/components/schemas/ReportResult'
+          readOnly: true
+          description: Migawka obliczana przy każdym zapisie raportu.
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Autor
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Utworzono
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Zmieniono
+          description: Moment ostatniego obliczenia raportu.
+      required:
+      - created_at
+      - created_by
+      - date_from
+      - date_to
+      - id
+      - name
+      - result
+      - updated_at
+    ReportRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nazwa
+          maxLength: 100
+        date_from:
+          type: string
+          format: date
+          title: Od
+          description: Początek okresu włącznie.
+        date_to:
+          type: string
+          format: date
+          title: Do
+          description: Koniec okresu włącznie.
+        icd10:
+          type: integer
+          nullable: true
+          description: Identyfikator wpisu w słowniku ICD-10. Null obejmuje wszystkie
+            rozpoznania.
+      required:
+      - date_from
+      - date_to
+      - name
+    ReportResult:
+      type: object
+      properties:
+        patient_count:
+          type: integer
+          minimum: 0
+          description: Liczba różnych pacjentów z wizytami w okresie.
+        visit_count:
+          type: integer
+          minimum: 0
+        measurements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeasurementStatistics'
+      required:
+      - measurements
+      - patient_count
+      - visit_count
+    ReportResultRequest:
+      type: object
+      properties:
+        patient_count:
+          type: integer
+          minimum: 0
+          description: Liczba różnych pacjentów z wizytami w okresie.
+        visit_count:
+          type: integer
+          minimum: 0
+        measurements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeasurementStatisticsRequest'
+      required:
+      - measurements
+      - patient_count
+      - visit_count
+    UnitEnum:
+      enum:
+      - mg/dL
+      - kg
+      type: string
+      description: |-
+        * `mg/dL` - mg/dL
+        * `kg` - kg
+    Visit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          type: integer
+          description: Identyfikator pacjenta.
+        visit_date:
+          type: string
+          format: date
+          title: Data wizyty
+        notes:
+          type: string
+          default: ''
+          title: Notatka
+          maxLength: 2000
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Autor
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Utworzono
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Zmieniono
+      required:
+      - created_at
+      - created_by
+      - id
+      - patient
+      - updated_at
+      - visit_date
+    VisitRequest:
+      type: object
+      properties:
+        patient:
+          type: integer
+          description: Identyfikator pacjenta.
+        visit_date:
+          type: string
+          format: date
+          title: Data wizyty
+        notes:
+          type: string
+          default: ''
+          title: Notatka
+          maxLength: 2000
+      required:
+      - patient
+      - visit_date
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

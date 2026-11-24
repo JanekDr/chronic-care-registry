@@ -1,9 +1,24 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 
 from .models import AuditLog, Diagnosis, Measurement, Report, Visit
+
+
+PATIENT_DELETE_BLOCKED = (
+    "Pacjent ma przypisane rozpoznania lub wizyty. Najpierw usuń rozpoznania, pomiary i wizyty."
+)
+VISIT_DELETE_BLOCKED = "Wizyta ma przypisane pomiary. Najpierw usuń pomiary."
+
+
+def filter_patients(queryset, *, search="", icd10=""):
+    for term in search.split():
+        queryset = queryset.filter(Q(first_name__icontains=term) | Q(last_name__icontains=term))
+    code = icd10.strip()
+    if code:
+        queryset = queryset.filter(diagnoses__icd10__code=code)
+    return queryset
 
 
 def record_audit(*, user, action, object_type, object_id=""):
@@ -24,7 +39,7 @@ def calculate_report(*, date_from, date_to, icd10_id=None):
     """Wynik dla domkniętego okresu; Decimal, zaokrąglenie ROUND_HALF_UP.
 
     Parametr ICD-10 to klucz słownika lub None. Funkcja nie zapisuje raportu
-    ani audytu, dzięki czemu może być użyta przez HTML, Admin i przyszłe API.
+    ani audytu, dzięki czemu może być użyta przez HTML, Admin i API.
     """
     parameters = Report(name="Raport", date_from=date_from, date_to=date_to, icd10_id=icd10_id)
     parameters.full_clean()

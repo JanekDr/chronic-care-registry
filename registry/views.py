@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
@@ -10,7 +9,13 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from .forms import PatientDiagnosisForm, PatientForm, PatientVisitForm, VisitMeasurementForm, ReportForm
 from .models import AuditLog, Diagnosis, ICD10Code, Measurement, Patient, Visit, Report
 from .permissions import RegistryAccessMixin
-from .services import record_audit, save_report
+from .services import (
+    PATIENT_DELETE_BLOCKED,
+    VISIT_DELETE_BLOCKED,
+    filter_patients,
+    record_audit,
+    save_report,
+)
 
 
 class ReadAuditMixin:
@@ -60,6 +65,7 @@ class AuditedSaveMixin:
 class AuditedDeleteMixin:
     template_name = "registry/confirm_delete.html"
     http_method_names = ["get", "post", "head", "options"]
+    delete_blocked_message = "Rekord ma powiązane dane."
 
     def form_valid(self, form):
         object_id = self.object.pk
@@ -69,11 +75,7 @@ class AuditedDeleteMixin:
                 record_audit(user=self.request.user, action=AuditLog.Action.DELETE,
                              object_type=self.model._meta.object_name, object_id=object_id)
         except ProtectedError:
-            if isinstance(self.object, Patient):
-                reason = "Pacjent ma przypisane rozpoznania lub wizyty. Najpierw usuń rozpoznania, pomiary i wizyty."
-            else:
-                reason = "Wizyta ma przypisane pomiary. Najpierw usuń pomiary."
-            form.add_error(None, reason)
+            form.add_error(None, self.delete_blocked_message)
             return self.form_invalid(form)
         messages.success(self.request, "Usunięto rekord.")
         return response
@@ -147,14 +149,11 @@ class PatientListView(RegistryAccessMixin, ReadAuditMixin, ListView):
     read_lists = (ICD10Code,)
 
     def get_queryset(self):
-        queryset = super().get_queryset().order_by("last_name", "first_name", "id")
-        # Każdy człon może pasować do imienia lub nazwiska, także w odwrotnej kolejności.
-        for term in self.request.GET.get("search", "").split():
-            queryset = queryset.filter(Q(first_name__icontains=term) | Q(last_name__icontains=term))
-        code = self.request.GET.get("icd10", "").strip()
-        if code:
-            queryset = queryset.filter(diagnoses__icd10__code=code)
-        return queryset
+        return filter_patients(
+            super().get_queryset(),
+            search=self.request.GET.get("search", ""),
+            icd10=self.request.GET.get("icd10", ""),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -201,6 +200,7 @@ class PatientUpdateView(RegistryAccessMixin, ReadAuditMixin, PatientSaveMixin, U
 class PatientDeleteView(RegistryAccessMixin, ReadAuditMixin, AuditedDeleteMixin, DeleteView):
     model = Patient
     page_title = "Usuń pacjenta"
+    delete_blocked_message = PATIENT_DELETE_BLOCKED
 
     def get_success_url(self):
         return reverse("registry:patient-list")
@@ -270,6 +270,7 @@ class VisitUpdateView(RegistryAccessMixin, ReadAuditMixin, VisitSaveMixin, Visit
 
 class VisitDeleteView(RegistryAccessMixin, ReadAuditMixin, VisitBaseMixin, AuditedDeleteMixin, DeleteView):
     page_title = "Usuń wizytę"
+    delete_blocked_message = VISIT_DELETE_BLOCKED
 
 
 class MeasurementBaseMixin(VisitScopeMixin):

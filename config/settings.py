@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_bootstrap5",
+    "rest_framework",
+    "drf_spectacular",
     "registry.apps.RegistryConfig",
 ]
 
@@ -88,4 +90,31 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 X_FRAME_OPTIONS = "DENY"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["registry.permissions.RegistryPermission"],
+    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Rejestr pacjentów z chorobą przewlekłą",
+    "VERSION": "1.0.0",
+    "DESCRIPTION": (
+        "Dostęp mają aktywne konta z grupy `personel` oraz superużytkownicy. "
+        "Zaloguj się przez `/accounts/login/` i zachowaj ciasteczka `sessionid` oraz `csrftoken`. "
+        "Przy POST, PUT, PATCH i DELETE prześlij wartość `csrftoken` także w nagłówku `X-CSRFToken`. "
+        "Wylogowanie wymaga POST na `/accounts/logout/` z tokenem CSRF.\n\n"
+        "Listy mają po 20 rekordów na stronę. Pacjenci są sortowani według nazwiska, imienia i ID, "
+        "wizyty według daty malejąco i ID rosnąco, a pozostałe zasoby według ID."
+    ),
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": r"/api(?:/v1)?",
+    "SERVE_PERMISSIONS": REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"],
+    "SERVE_PUBLIC": False,
+}
 

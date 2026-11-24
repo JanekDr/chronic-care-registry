@@ -5,15 +5,15 @@ a kolejność prac i kryteria odbioru — [IMPLEMENTATION_PLAN.md](IMPLEMENTATIO
 
 ## Aktualny stan
 
-Ukończono etapy 1–4: projekt Django, sesje, role, lokalny Bootstrap, audyt,
-modele kliniczne i raportu, wspólna walidacja, administracja, `seed_demo`
-oraz pełna ścieżka HTML pacjent → rozpoznanie → wizyta → pomiar i zapisane raporty.
+Ukończono etapy 1–5. Aplikacja obejmuje sesje, role, lokalny Bootstrap, audyt,
+modele kliniczne i raportu, wspólną walidację, administrację, `seed_demo`, pełną
+ścieżkę HTML pacjent → rozpoznanie → wizyta → pomiar, zapisane raporty i REST API
+z opisem OpenAPI.
 Administrator może zarządzać pacjentami, rozpoznaniami, wizytami, pomiarami,
 słownikiem oraz kontami przez Django Admin. Raporty w administracji można
 tworzyć i edytować z przeliczeniem oraz usuwać; każda zmiana ma audyt.
 Personel i administrator mogą przeglądać, dodawać, poprawiać i usuwać dane
 kliniczne przez **Pacjentów** i tworzyć zestawienia przez **Raporty**.
-REST API, FHIR i kontener należą do następnych etapów.
 
 ## Uruchomienie lokalne — Windows / PowerShell
 
@@ -29,7 +29,7 @@ py -3.12 -m venv .venv
 ```
 
 Nie trzeba aktywować środowiska ani zmieniać zasad wykonywania skryptów PowerShell.
-Zależności etapu 1 oraz ich zależności pośrednie są przypięte w `requirements.txt`.
+Zależności aplikacji i ich zależności pośrednie są przypięte w `requirements.txt`.
 
 ### 2. Zmienne środowiskowe
 
@@ -177,10 +177,9 @@ blokuje usuwanie kont; konta autorów należy dezaktywować przez pole „Aktywn
 
 Reguły znajdują się w `registry/models.py` i `registry/validation.py`.
 Formularze ModelForm (także w administracji) wywołują `full_clean()` Django.
-Serializery w etapie 5 mają używać `validate_model_instance(instance, attrs)`,
-przekładając `ValidationError.message_dict` na standardowe błędy DRF i zapisując
-znormalizowane wartości. Funkcja sprawdza kopię pełnego obiektu, więc PATCH
-sprawdza nowe pola razem z niezmienionymi datami i relacjami.
+Serializery używają `validate_model_instance(instance, attrs)`, przekładają błędy
+modelu na standardowe błędy pól DRF i zapisują znormalizowane wartości. Funkcja
+sprawdza kopię pełnego obiektu, więc PATCH uwzględnia wszystkie daty i relacje.
 
 Przy zapisie z kodu trzeba jawnie wywołać `full_clean()` albo tę funkcję:
 `save()`, `objects.create()`, `update()` i operacje bulk nie uruchamiają walidacji
@@ -212,11 +211,89 @@ parametrów. Usunięcie raportu wymaga potwierdzenia.
 Wspólna funkcja `registry.services.calculate_report` nie zapisuje danych ani
 audytu. HTML korzysta z `save_report`, który obejmuje walidację, obliczenie,
 zapis i pojedynczy wpis audytu jedną transakcją. Django Admin korzysta z tego
-samego kalkulatora w swojej transakcji zapisu i audytu. Autor jest ustawiany
-przy utworzeniu i zachowywany podczas edycji. Przyszłe API ma używać tych samych
-funkcji. W SQLite średnia jest liczona w Pythonie z Decimal, bez SQL AVG/float.
+samego kalkulatora w swojej transakcji zapisu i audytu. API korzysta z `save_report`,
+tak jak HTML. Autor jest ustawiany przy utworzeniu i zachowywany podczas edycji.
+Średnia jest liczona w Pythonie z Decimal.
 
-## Sprawdzenie etapów 1–4
+## REST API
+
+Aktywne konta z grupy `personel` i superużytkownicy mogą korzystać z tych samych
+danych przez interfejs HTML i API. Logowanie przez `/accounts/login/` zakłada
+sesję Django. Klient API zachowuje ciasteczka `sessionid` i `csrftoken`. Przy
+`POST`, `PUT`, `PATCH` i `DELETE` przesyła także aktualną wartość `csrftoken`
+w nagłówku `X-CSRFToken`. Po zalogowaniu Django zmienia token. Wylogowanie
+wymaga `POST /accounts/logout/` z CSRF.
+
+| Zasób | Adres kolekcji | Filtry listy |
+| --- | --- | --- |
+| Pacjenci | `/api/v1/patients/` | `search` po imieniu lub nazwisku, `icd10` jako kod, np. `I10` |
+| Rozpoznania | `/api/v1/diagnoses/` | `patient` jako ID pacjenta |
+| Wizyty | `/api/v1/visits/` | `patient`, `date_from`, `date_to`. Zakres dat `YYYY-MM-DD` obejmuje obie granice. |
+| Pomiary | `/api/v1/measurements/` | `visit` jako ID wizyty |
+| Raporty | `/api/v1/reports/` | |
+| Słownik ICD-10 | `/api/v1/icd10/` | `search` po kodzie lub nazwie |
+
+Pierwsze pięć kolekcji obsługuje `GET` i `POST`. Adres z `/{id}/` obsługuje
+`GET`, `PUT`, `PATCH` oraz `DELETE`. Słownik udostępnia `GET` listy i szczegółów.
+Listy zwracają po 20 rekordów i pola `count`, `next`, `previous`, `results`.
+Pacjenci są sortowani po nazwisku, imieniu i ID, wizyty od najnowszej daty i po
+ID rosnąco, a pozostałe listy po ID.
+
+Treść żądań ma format JSON, a pola powiązań przyjmują identyfikatory. Przy
+`PUT` podaj wszystkie pola wymagane. `PATCH` zachowuje pominięte parametry.
+Raport z `icd10: null` lub pominiętym `icd10` przy `POST` albo `PUT` obejmuje
+wszystkie rozpoznania. Każdy zapis raportu przelicza `result`, a `GET` zwraca
+zapisaną migawkę. Identyfikator, autor, znaczniki czasu i wynik są polami
+do odczytu.
+
+Odpowiedź `201` oznacza utworzenie, `200` oznacza odczyt lub edycję, a `204`
+oznacza usunięcie. Błędy walidacji zwracają `400` z listą komunikatów dla
+odpowiedniego pola. Brak sesji, roli lub poprawnego tokenu CSRF daje `403`,
+brak rekordu lub strony `404`, a blokada usunięcia przez zależności `409`
+z wyjaśnieniem w `detail`. API zapisuje audyt odczytów list i szczegółów oraz
+jeden wpis dla każdej udanej zmiany w tej samej transakcji co rekord.
+
+### Przykład z PowerShell
+
+Przy uruchomionym serwerze i koncie `demo-personel` zaloguj się, wyszukaj
+pacjentów z I10 i utwórz przykładowy rekord.
+
+```powershell
+$apiBase = "http://127.0.0.1:8000"
+$loginUrl = "$apiBase/accounts/login/"
+Invoke-WebRequest $loginUrl -UseBasicParsing -SessionVariable registrySession | Out-Null
+$registryCredential = Get-Credential -UserName "demo-personel" -Message "Konto rejestru"
+Invoke-WebRequest $loginUrl -UseBasicParsing -WebSession $registrySession -Method Post -Body @{
+    username = $registryCredential.UserName
+    password = $registryCredential.GetNetworkCredential().Password
+    csrfmiddlewaretoken = $registrySession.Cookies.GetCookies([uri]$apiBase)["csrftoken"].Value
+} | Out-Null
+Remove-Variable registryCredential
+
+Invoke-RestMethod "$apiBase/api/v1/patients/?search=Anna&icd10=I10" -WebSession $registrySession
+$csrfToken = $registrySession.Cookies.GetCookies([uri]$apiBase)["csrftoken"].Value
+$patientJson = @{
+    first_name = "Ada"
+    last_name = "Przykładowa"
+    birth_date = "1990-01-01"
+    gender = "female"
+} | ConvertTo-Json
+Invoke-RestMethod "$apiBase/api/v1/patients/" -WebSession $registrySession -Method Post `
+    -ContentType "application/json; charset=utf-8" -Headers @{ "X-CSRFToken" = $csrfToken } -Body $patientJson
+```
+
+### OpenAPI
+
+Uprawnione konta mogą pobrać schemat JSON z `/api/schema/`. Schemat zawiera
+parametry, pola żądań i odpowiedzi oraz przykłady pomiaru i raportu. Po zmianie
+kontraktu wygeneruj ponownie i zweryfikuj [docs/openapi.yaml](docs/openapi.yaml)
+w sesji z ustawionym `SECRET_KEY`.
+
+```powershell
+.\.venv\Scripts\python.exe manage.py spectacular --file docs/openapi.yaml --validate --fail-on-warn
+```
+
+## Sprawdzenie etapów 1–5
 
 W sesji z ustawionym `SECRET_KEY`:
 
@@ -249,10 +326,17 @@ i zaokrąglanie, trwałość migawki i przeliczenie przy każdym zapisie. Obejmu
 również role, CSRF, błędy formularza, escapowanie nazwy, audyt odczytów/CRUD,
 autora i wycofanie zmian po błędzie audytu w HTML oraz administracji.
 
+Testy `APITestCase` obejmują CRUD i PUT/PATCH, role i rzeczywiste sprawdzanie
+CSRF sesji, filtry, paginację, pola do odczytu i kody błędów. Sprawdzają też
+zgodność raportu z HTML, pojedyncze wpisy audytu, wycofanie zmian po błędzie
+audytu oraz zgodność schematu z wersją w repozytorium.
+
 ## Źródła techniczne
 
 - [Uwierzytelnianie i sesje Django 5.2](https://docs.djangoproject.com/en/5.2/topics/auth/default/)
 - [Django Admin](https://docs.djangoproject.com/en/5.2/ref/contrib/admin/)
+- [Uwierzytelnianie sesyjne Django REST Framework](https://www.django-rest-framework.org/api-guide/authentication/#sessionauthentication)
+- [Generowanie i walidacja OpenAPI z drf-spectacular](https://drf-spectacular.readthedocs.io/en/stable/customization.html)
 - [django-bootstrap5](https://django-bootstrap5.readthedocs.io/en/stable/quickstart.html)
 - [Bootstrap 5.3](https://getbootstrap.com/docs/5.3/getting-started/download/)
 

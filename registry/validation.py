@@ -1,4 +1,4 @@
-"""Reguły modeli wspólne dla ModelForm i przyszłych serializerów REST."""
+"""Reguły modeli wspólne dla ModelForm i serializerów REST."""
 
 from copy import copy
 from datetime import date

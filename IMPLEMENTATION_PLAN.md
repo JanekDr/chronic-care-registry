@@ -4,7 +4,7 @@ Data przygotowania: 9 listopada 2026 r.
 
 Podstawa: [SPEC.md](SPEC.md). Specyfikacja pozostaje źródłem wymagań; ten dokument określa kolejność prac, zależności, rezultaty i sposób ich odbioru. Zmiana zakresu wymaga najpierw uzgodnienia i aktualizacji specyfikacji.
 
-Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Stan aktualny: etap 1 ukończony i sprawdzony 9 listopada 2026 r., etap 2 — 10 listopada 2026 r. Etap 3 — 18 listopada 2026 r. Etap 4 — 18 listopada 2026 r. Etapy 5–8 pozostają otwarte; zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
+Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Etap 1 ukończono i sprawdzono 9 listopada 2026 r., etap 2 ukończono 10 listopada 2026 r., etapy 3 i 4 ukończono 18 listopada 2026 r., a etap 5 ukończono 24 listopada 2026 r. Etapy 6–8 pozostają otwarte. Zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
 
 ## 1. Zasady realizacji
 
@@ -116,19 +116,21 @@ Odniesienie: SPEC §4–6 i §10.
 
 Odniesienie: SPEC §7 i §9–10.
 
-- [ ] Dodać serializery i ModelViewSet dla pacjentów, rozpoznań, wizyt, pomiarów i raportów pod `/api/v1/` oraz słownik ICD-10 wyłącznie do odczytu.
-- [ ] Wykorzystać walidację z etapu 2 oraz obliczenia raportów z etapu 4. Pola autora, czasu i wyniku ustawić tylko do odczytu.
-- [ ] Ustawić `SessionAuthentication`, sprawdzanie roli na każdym zasobie i CSRF dla zmian. API ma odrzucać brak dostępu kodem `403`, bez przekierowań HTML.
-- [ ] Włączyć `PageNumberPagination` z 20 rekordami i stabilne sortowanie: pacjenci po nazwisku, imieniu i id; wizyty po dacie malejąco i id; pozostałe po id.
-- [ ] Dodać filtry ze SPEC: wyszukiwanie pacjentów i kod ICD-10, pacjent rozpoznania/wizyty, okres wizyt, wizyta pomiaru oraz wyszukiwanie słownika po kodzie/nazwie.
-- [ ] Odrzucać błędny format dat i odwrócony okres w filtrach kodem `400`.
-- [ ] Ujednolicić obsługę błędów: standardowe błędy pól DRF, `404` dla brakującego obiektu i `409` przy blokadzie usuwania.
-- [ ] Dodać audyt odczytów i zmian; nie dublować zdarzeń, gdy API korzysta ze wspólnych funkcji.
-- [ ] Skonfigurować drf-spectacular i chroniony endpoint `/api/schema/`. Opisać pola, sesje/CSRF, uprawnienia, filtry, odpowiedzi i przykłady; eksport FHIR uzupełnić w etapie 6.
-- [ ] Wygenerować i sprawdzić plik OpenAPI przeznaczony do dokumentacji. Nie dodawać osobnego interfejsu Swagger.
-- [ ] Dodać APITestCase dla CRUD, PUT/PATCH, paginacji, filtrów, pól tylko do odczytu, kodów błędów i zgodności raportu z HTML. Testy CSRF uruchamiać z rzeczywistym sprawdzaniem tokenu.
+- [x] Dodać serializery i ModelViewSet dla pacjentów, rozpoznań, wizyt, pomiarów i raportów pod `/api/v1/` oraz słownik ICD-10 wyłącznie do odczytu.
+- [x] Wykorzystać walidację z etapu 2 oraz obliczenia raportów z etapu 4. Pola autora, czasu i wyniku ustawić tylko do odczytu.
+- [x] Ustawić `SessionAuthentication`, sprawdzanie roli na każdym zasobie i CSRF dla zmian. API ma odrzucać brak dostępu kodem `403`, bez przekierowań HTML.
+- [x] Włączyć `PageNumberPagination` z 20 rekordami i stabilne sortowanie: pacjenci po nazwisku, imieniu i id; wizyty po dacie malejąco i id; pozostałe po id.
+- [x] Dodać filtry ze SPEC: wyszukiwanie pacjentów i kod ICD-10, pacjent rozpoznania/wizyty, okres wizyt, wizyta pomiaru oraz wyszukiwanie słownika po kodzie/nazwie.
+- [x] Odrzucać błędny format dat i odwrócony okres w filtrach kodem `400`.
+- [x] Ujednolicić obsługę błędów: standardowe błędy pól DRF, `404` dla brakującego obiektu i `409` przy blokadzie usuwania.
+- [x] Dodać audyt odczytów i zmian; nie dublować zdarzeń, gdy API korzysta ze wspólnych funkcji.
+- [x] Skonfigurować drf-spectacular i chroniony endpoint `/api/schema/`. Opisać pola, sesje/CSRF, uprawnienia, filtry, odpowiedzi i przykłady; eksport FHIR uzupełnić w etapie 6.
+- [x] Wygenerować i sprawdzić plik OpenAPI przeznaczony do dokumentacji. Nie dodawać osobnego interfejsu Swagger.
+- [x] Dodać APITestCase dla CRUD, PUT/PATCH, paginacji, filtrów, pól tylko do odczytu, kodów błędów i zgodności raportu z HTML. Testy CSRF uruchamiać z rzeczywistym sprawdzaniem tokenu.
 
 **Kryterium odbioru:** wszystkie endpointy i odpowiedzi ze SPEC działają; HTML i API egzekwują te same reguły i obliczają ten sam raport; schemat jest dostępny wyłącznie dla uprawnionych użytkowników.
+
+**Wynik odbioru, 24 listopada 2026 r.** Przeszło 109 testów, w tym 14 scenariuszy `APITestCase`. `check`, `makemigrations --check --dry-run` i `pip check` zakończyły się bez błędów. Raport A/B/C w API dał tę samą migawkę co HTML, a każdy zapis edycji przeliczył wynik i dodał jeden wpis audytu. Testy potwierdziły też wycofanie utworzenia, edycji i usunięcia każdego zasobu przy błędzie audytu. Na lokalnym serwerze HTTP z osobną bazą demo sprawdzono logowanie, zmianę tokenu CSRF, odczyt i zapis pacjentów, błędny filtr daty oraz blokadę usunięcia. Chroniony `/api/schema/` zwraca JSON zgodny z [docs/openapi.yaml](docs/openapi.yaml). Wygenerowany dokument przeszedł walidację `spectacular --validate --fail-on-warn`. README zawiera instrukcję logowania i żądań z PowerShell.
 
 ## 8. Etap 6 — eksport HL7 FHIR R4
 
