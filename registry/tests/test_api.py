@@ -315,6 +315,18 @@ class RegistryAPITests(RegistryAPITestCase):
         self.assertIn("X-CSRFToken", {parameter["name"] for parameter in report_create["parameters"] if parameter["required"]})
         self.assertNotIn("result", schema["components"]["schemas"]["ReportRequest"]["properties"])
         self.assertTrue(schema["components"]["schemas"]["Report"]["properties"]["result"]["readOnly"])
+        export = schema["paths"]["/api/v1/patients/{id}/fhir-export/"]["get"]
+        self.assertEqual(export["security"], [{"cookieAuth": []}])
+        self.assertEqual(set(export["responses"]), {"200", "403", "404"})
+        download = export["responses"]["200"]
+        self.assertIn("Content-Disposition", download["headers"])
+        fhir_media_type = download["content"]["application/fhir+json"]
+        resource_schema = fhir_media_type["schema"]["properties"]["entry"]["items"]["properties"]["resource"]
+        quantity_value = resource_schema["properties"]["valueQuantity"]["properties"]["value"]
+        self.assertEqual(quantity_value["type"], "number")
+        example, = fhir_media_type["examples"].values()
+        self.assertEqual(example["value"]["resourceType"], "Bundle")
+        self.assertIsInstance(example["value"]["entry"][-1]["resource"]["valueQuantity"]["value"], float)
 
 
 class ReportAPITests(RegistryAPITestCase):

@@ -1100,6 +1100,198 @@ paths:
                   summary: Powiązane dane
           description: Pacjent ma przypisane rozpoznania lub wizyty. Najpierw usuń
             rozpoznania, pomiary i wizyty.
+  /api/v1/patients/{id}/fhir-export/:
+    get:
+      operationId: patients_fhir_export_retrieve
+      description: Dostęp dla personelu i superużytkowników z aktywną sesją. Bundle
+        R4 4.0.1 zawiera jednego pacjenta oraz jego rozpoznania, wizyty i pomiary.
+        Referencje wskazują `fullUrl` w tym samym pliku, a `valueQuantity.value` jest
+        liczbą JSON.
+      summary: Pobierz eksport pacjenta w HL7 FHIR R4
+      externalDocs:
+        url: https://hl7.org/fhir/R4/bundle.html
+        description: Bundle w FHIR R4 4.0.1
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Identyfikator pacjenta w rejestrze.
+        required: true
+      tags:
+      - patients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: Załącznik `attachment; filename="patient-{id}-fhir.json"`.
+              required: true
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+                required:
+                - resourceType
+                - type
+                - timestamp
+                - entry
+                properties:
+                  resourceType:
+                    type: string
+                    enum:
+                    - Bundle
+                  type:
+                    type: string
+                    enum:
+                    - collection
+                  timestamp:
+                    type: string
+                    format: date-time
+                  entry:
+                    type: array
+                    minItems: 1
+                    items:
+                      type: object
+                      required:
+                      - fullUrl
+                      - resource
+                      properties:
+                        fullUrl:
+                          type: string
+                          format: uri
+                          description: URN `urn:uuid:{uuid}`.
+                        resource:
+                          type: object
+                          required:
+                          - resourceType
+                          - id
+                          properties:
+                            resourceType:
+                              type: string
+                              enum:
+                              - Patient
+                              - Condition
+                              - Encounter
+                              - Observation
+                            id:
+                              type: string
+                              format: uuid
+                            valueQuantity:
+                              type: object
+                              description: Wartość pomiaru w zasobie Observation.
+                              required:
+                              - value
+                              - unit
+                              - system
+                              - code
+                              properties:
+                                value:
+                                  type: number
+                                unit:
+                                  type: string
+                                system:
+                                  type: string
+                                  enum:
+                                  - http://unitsofmeasure.org
+                                code:
+                                  type: string
+              examples:
+                EksportWFHIRR4:
+                  value:
+                    resourceType: Bundle
+                    type: collection
+                    timestamp: '2026-11-24T09:30:00Z'
+                    entry:
+                    - fullUrl: urn:uuid:c26e52c1-f686-53bd-b7df-853bbcfdfcdf
+                      resource:
+                        resourceType: Patient
+                        id: c26e52c1-f686-53bd-b7df-853bbcfdfcdf
+                        identifier:
+                        - system: urn:psim:patient-id
+                          value: '1'
+                        name:
+                        - given:
+                          - Ada
+                          family: Przykładowa
+                        birthDate: '1990-01-01'
+                        gender: female
+                    - fullUrl: urn:uuid:dc41eb42-942f-5ccc-91b8-7eb9afe74ab5
+                      resource:
+                        resourceType: Condition
+                        id: dc41eb42-942f-5ccc-91b8-7eb9afe74ab5
+                        subject:
+                          reference: urn:uuid:c26e52c1-f686-53bd-b7df-853bbcfdfcdf
+                        code:
+                          coding:
+                          - system: http://hl7.org/fhir/sid/icd-10
+                            code: I10
+                        clinicalStatus:
+                          coding:
+                          - system: http://terminology.hl7.org/CodeSystem/condition-clinical
+                            code: active
+                        verificationStatus:
+                          coding:
+                          - system: http://terminology.hl7.org/CodeSystem/condition-ver-status
+                            code: confirmed
+                        recordedDate: '2026-11-23T09:00:00Z'
+                    - fullUrl: urn:uuid:394360e7-d544-5e06-8d91-2afb3659f5c7
+                      resource:
+                        resourceType: Encounter
+                        id: 394360e7-d544-5e06-8d91-2afb3659f5c7
+                        subject:
+                          reference: urn:uuid:c26e52c1-f686-53bd-b7df-853bbcfdfcdf
+                        status: finished
+                        class:
+                          system: http://terminology.hl7.org/CodeSystem/v3-ActCode
+                          code: AMB
+                        period:
+                          start: '2026-11-23'
+                    - fullUrl: urn:uuid:f19d1252-2dfa-52a3-88e1-b8bee3c8d30e
+                      resource:
+                        resourceType: Observation
+                        id: f19d1252-2dfa-52a3-88e1-b8bee3c8d30e
+                        subject:
+                          reference: urn:uuid:c26e52c1-f686-53bd-b7df-853bbcfdfcdf
+                        encounter:
+                          reference: urn:uuid:394360e7-d544-5e06-8d91-2afb3659f5c7
+                        status: final
+                        effectiveDateTime: '2026-11-23'
+                        meta:
+                          profile:
+                          - http://hl7.org/fhir/StructureDefinition/bodyweight
+                        code:
+                          coding:
+                          - system: http://loinc.org
+                            code: 29463-7
+                            display: Body weight
+                        category:
+                        - coding:
+                          - system: http://terminology.hl7.org/CodeSystem/observation-category
+                            code: vital-signs
+                        valueQuantity:
+                          value: 72.25
+                          unit: kg
+                          system: http://unitsofmeasure.org
+                          code: kg
+                  summary: Eksport w FHIR R4
+          description: Plik JSON z Bundle typu `collection`.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Brak sesji, wymaganej roli lub poprawnego tokenu CSRF dla żądania
+            zmieniającego dane.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetail'
+          description: Wskazany rekord lub strona nie istnieje.
   /api/v1/reports/:
     get:
       operationId: reports_list

@@ -1,6 +1,6 @@
 # Słowniki demonstracyjne
 
-Źródła sprawdzone 10 listopada 2026 r. Aplikacja korzysta z dwóch kodów ICD-10
+Źródła sprawdzone 24 listopada 2026 r. Aplikacja korzysta z dwóch kodów ICD-10
 i dwóch stałych powiązań LOINC; nie pobiera klasyfikacji podczas uruchomienia.
 Licencja kodu aplikacji nie zastępuje warunków materiałów terminologicznych.
 
@@ -14,6 +14,8 @@ Diseases and Related Health Problems, 10th Revision*, wersja 2019:
 | --- | --- |
 | [I10](https://icd.who.int/browse10/2019/en#/I10) | Nadciśnienie samoistne (pierwotne) |
 | [E11.9](https://icd.who.int/browse10/2019/en#/E11.9) | Cukrzyca typu 2 bez powikłań |
+
+Eksport `Condition` stosuje dla tych kodów system `http://hl7.org/fhir/sid/icd-10`.
 
 Polskie etykiety w demonstracji objaśniają znaczenie kodów; nie stanowią importu
 pełnego oficjalnego polskiego wydania klasyfikacji ani narzędzia do kodowania.
@@ -55,5 +57,6 @@ ograniczeń zmian i praw do treści stron trzecich. Wymagana nota znajduje się
 w [LOINC_short_license.txt](LOINC_short_license.txt); należy zachować ją również
 w paczce końcowej. Repozytorium nie zawiera pełnej tabeli ani treści ankiet LOINC.
 
-Stałe mapowanie jest przygotowaniem do etapu 6. Eksport FHIR, profil Body Weight
-i walidacja HL7 R4 nie są jeszcze zaimplementowane.
+Eksport `Observation` używa systemów `http://loinc.org` i `http://unitsofmeasure.org`.
+Pomiar masy ciała deklaruje profil Body Weight z FHIR R4 i używa kategorii
+`vital-signs`. [Profil Body Weight](https://hl7.org/fhir/R4/bodyweight.html)

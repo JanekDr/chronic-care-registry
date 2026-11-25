@@ -1,13 +1,18 @@
+import simplejson
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.deletion import ProtectedError
+from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema_view
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import APIException
+from rest_framework.negotiation import DefaultContentNegotiation
 from rest_framework.response import Response
 
 from .api_filters import DiagnosisFilters, ICD10Filters, MeasurementFilters, PatientFilters, VisitFilters
-from .api_schema import crud_schema, detail_schema, list_schema
+from .api_schema import crud_schema, detail_schema, fhir_export_schema, list_schema
+from .fhir import FHIR_JSON_MEDIA_TYPE, build_patient_bundle
 from .models import AuditLog, Diagnosis, ICD10Code, Measurement, Patient, Report, Visit
 from .serializers import (
     DiagnosisSerializer,
@@ -90,6 +95,12 @@ class RegistryModelViewSet(RegistryReadMixin, viewsets.ModelViewSet):
         self.record_access(AuditLog.Action.DELETE, object_id)
 
 
+class FHIRDownloadNegotiation(DefaultContentNegotiation):
+    def select_renderer(self, request, renderers, format_suffix=None):
+        # Plik ma stały format. Renderer DRF obsługuje odpowiedzi błędów w zwykłym JSON.
+        return renderers[0], renderers[0].media_type
+
+
 @crud_schema(PatientSerializer, filters=PatientFilters, delete_blocked_message=PATIENT_DELETE_BLOCKED)
 class PatientViewSet(RegistryModelViewSet):
     queryset = Patient.objects.all()
@@ -97,6 +108,22 @@ class PatientViewSet(RegistryModelViewSet):
     query_serializer_class = PatientFilters
     delete_blocked_message = PATIENT_DELETE_BLOCKED
     filter_list = staticmethod(filter_patients)
+
+    @fhir_export_schema
+    @action(detail=True, url_path="fhir-export", content_negotiation_class=FHIRDownloadNegotiation)
+    @transaction.atomic
+    def fhir_export(self, request, *args, **kwargs):
+        patient = self.get_object()
+        response = HttpResponse(
+            simplejson.dumps(build_patient_bundle(patient), use_decimal=True, ensure_ascii=False),
+            content_type=FHIR_JSON_MEDIA_TYPE,
+            headers={
+                "Content-Disposition": f'attachment; filename="patient-{patient.pk}-fhir.json"',
+                "Cache-Control": "no-store",
+            },
+        )
+        self.record_access(AuditLog.Action.FHIR_EXPORT, patient.pk)
+        return response
 
 
 @crud_schema(DiagnosisSerializer, filters=DiagnosisFilters)

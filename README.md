@@ -5,10 +5,10 @@ a kolejność prac i kryteria odbioru — [IMPLEMENTATION_PLAN.md](IMPLEMENTATIO
 
 ## Aktualny stan
 
-Ukończono etapy 1–5. Aplikacja obejmuje sesje, role, lokalny Bootstrap, audyt,
+Ukończono etapy 1–6. Aplikacja obejmuje sesje, role, lokalny Bootstrap, audyt,
 modele kliniczne i raportu, wspólną walidację, administrację, `seed_demo`, pełną
-ścieżkę HTML pacjent → rozpoznanie → wizyta → pomiar, zapisane raporty i REST API
-z opisem OpenAPI.
+ścieżkę HTML pacjent → rozpoznanie → wizyta → pomiar, zapisane raporty, REST API
+z opisem OpenAPI i eksport pacjenta w HL7 FHIR R4.
 Administrator może zarządzać pacjentami, rozpoznaniami, wizytami, pomiarami,
 słownikiem oraz kontami przez Django Admin. Raporty w administracji można
 tworzyć i edytować z przeliczeniem oraz usuwać; każda zmiana ma audyt.
@@ -285,15 +285,68 @@ Invoke-RestMethod "$apiBase/api/v1/patients/" -WebSession $registrySession -Meth
 ### OpenAPI
 
 Uprawnione konta mogą pobrać schemat JSON z `/api/schema/`. Schemat zawiera
-parametry, pola żądań i odpowiedzi oraz przykłady pomiaru i raportu. Po zmianie
-kontraktu wygeneruj ponownie i zweryfikuj [docs/openapi.yaml](docs/openapi.yaml)
-w sesji z ustawionym `SECRET_KEY`.
+parametry, pola żądań i odpowiedzi oraz przykłady pomiaru, raportu i eksportu
+FHIR. Po zmianie kontraktu wygeneruj ponownie i zweryfikuj
+[docs/openapi.yaml](docs/openapi.yaml) w sesji z ustawionym `SECRET_KEY`.
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py spectacular --file docs/openapi.yaml --validate --fail-on-warn
 ```
 
-## Sprawdzenie etapów 1–5
+## Eksport FHIR R4
+
+Na karcie pacjenta wybierz **Pobierz plik FHIR**. Plik można też pobrać
+przez `GET /api/v1/patients/{id}/fhir-export/` w sesji personelu albo
+superużytkownika. Odpowiedź ma typ `application/fhir+json` i nazwę pliku
+`patient-{id}-fhir.json`. Rejestr dostępu zapisuje zdarzenie `fhir_export`
+dla wskazanego pacjenta.
+
+W sesji PowerShell z wcześniejszego przykładu można pobrać pacjenta demo `10001`.
+
+```powershell
+$exportPatientId = 10001
+Invoke-WebRequest "$apiBase/api/v1/patients/$exportPatientId/fhir-export/" `
+    -WebSession $registrySession -Headers @{ Accept = "application/fhir+json" } `
+    -OutFile "patient-$exportPatientId-fhir.json"
+```
+
+Pakiet `Bundle` typu `collection` zawiera zasoby `Patient`, `Condition`,
+`Encounter` i `Observation` wskazanego pacjenta. Identyfikatory UUID są stałe,
+a odwołania wskazują `fullUrl` w tym samym pliku. `Condition.recordedDate`
+pochodzi z czasu utworzenia rozpoznania. Daty wizyt i pomiarów zachowują
+dokładność do dnia. `simplejson` zapisuje wartości pomiarów jako liczby JSON
+z zachowaną precyzją `Decimal`, włącznie z końcowymi zerami. [Format JSON w FHIR R4](https://hl7.org/fhir/R4/json.html)
+
+Kody i jednostki opisano w [słownikach demonstracyjnych](docs/TERMINOLOGY.md).
+
+### Walidacja eksportu
+
+24 listopada 2026 r. zwalidowano pobrane pliki pacjentów demonstracyjnych
+`10001` i `10002`. Zawierały kody ICD-10 `I10` i `E11.9` oraz pomiary glukozy
+i masy ciała. Walidator HL7 CLI `7.0.6` (`86bf796ddc97`) użył pakietu
+`hl7.fhir.r4.core#4.0.1` i połączył się z serwerem terminologicznym HL7.
+[Wydanie walidatora](https://github.com/hapifhir/org.hl7.fhir.core/releases/tag/7.0.6)
+
+```powershell
+java -jar validator_cli.jar patient-10001-fhir.json patient-10002-fhir.json `
+    -version 4.0.1 -output outcome.json
+```
+
+Polecenie zakończyło się kodem `0`. Każdy z dwóch wyników `OperationOutcome`
+miał 0 błędów, 10 ostrzeżeń i 8 komunikatów informacyjnych.
+
+- Sześć ostrzeżeń `dom-6` w każdym pliku dotyczyło zalecanego opisu `text` do
+  odczytu przez człowieka. Pakiet zawiera pola strukturalne zgodne z §8 SPEC.
+- Cztery ostrzeżenia `Observation.performer` w każdym pliku dotyczyły zalecanego
+  wskazania wykonawcy pomiaru. Rejestr przechowuje autora wizyty oraz rodzaj
+  i wartość pomiaru.
+- Komunikaty informacyjne potwierdziły sprawdzenie profilu Body Weight i
+  poprawność angielskich nazw LOINC przy polskiej lokalizacji walidatora.
+
+Przykład odpowiedzi z OpenAPI również przeszedł walidację z wynikiem 0 błędów
+i 4 ostrzeżeniami dotyczącymi tych samych zaleceń.
+
+## Sprawdzenie etapów 1–6
 
 W sesji z ustawionym `SECRET_KEY`:
 
@@ -330,6 +383,9 @@ Testy `APITestCase` obejmują CRUD i PUT/PATCH, role i rzeczywiste sprawdzanie
 CSRF sesji, filtry, paginację, pola do odczytu i kody błędów. Sprawdzają też
 zgodność raportu z HTML, pojedyncze wpisy audytu, wycofanie zmian po błędzie
 audytu oraz zgodność schematu z wersją w repozytorium.
+
+Testy eksportu FHIR sprawdzają mapowanie zasobów, precyzję liczb JSON,
+referencje, izolację danych, uprawnienia, nagłówki pobrania oraz wpis audytu.
 
 ## Źródła techniczne
 

@@ -5,6 +5,7 @@
   <h1 class="h2">{{ patient }}</h1>
   <dl class="row mt-4"><dt class="col-sm-3">Data urodzenia</dt><dd class="col-sm-9">{{ patient.birth_date|date:"d.m.Y" }}</dd><dt class="col-sm-3">Płeć</dt><dd class="col-sm-9">{{ patient.get_gender_display }}</dd></dl>
   <div class="d-flex flex-wrap gap-2 mb-5">
+    <a class="btn btn-outline-primary" href="{% url 'api:patient-fhir-export' patient.pk %}">Pobierz plik FHIR</a>
     <a class="btn btn-outline-primary" href="{% url 'registry:patient-update' patient.pk %}">Edytuj pacjenta</a>
     <a class="btn btn-outline-danger" href="{% url 'registry:patient-delete' patient.pk %}">Usuń pacjenta</a>
   </div>

@@ -4,7 +4,7 @@ Data przygotowania: 9 listopada 2026 r.
 
 Podstawa: [SPEC.md](SPEC.md). Specyfikacja pozostaje źródłem wymagań; ten dokument określa kolejność prac, zależności, rezultaty i sposób ich odbioru. Zmiana zakresu wymaga najpierw uzgodnienia i aktualizacji specyfikacji.
 
-Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Etap 1 ukończono i sprawdzono 9 listopada 2026 r., etap 2 ukończono 10 listopada 2026 r., etapy 3 i 4 ukończono 18 listopada 2026 r., a etap 5 ukończono 24 listopada 2026 r. Etapy 6–8 pozostają otwarte. Zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
+Stan początkowy: repozytorium zawierało `SPEC.md`, podstawowy `README.md` i `LICENSE`, bez implementacji aplikacji. Etap 1 ukończono i sprawdzono 9 listopada 2026 r., etap 2 ukończono 10 listopada 2026 r., etapy 3 i 4 ukończono 18 listopada 2026 r., a etapy 5 i 6 ukończono 24 listopada 2026 r. Etapy 7–8 pozostają otwarte. Zadania zaznaczać po wykonaniu i sprawdzeniu rezultatu.
 
 ## 1. Zasady realizacji
 
@@ -136,20 +136,22 @@ Odniesienie: SPEC §7 i §9–10.
 
 Odniesienie: SPEC §8 i §10.
 
-- [ ] Zaimplementować mapowanie w `registry/fhir.py` dla R4 4.0.1, bez dodawania UUID do modeli i bez tworzenia serwera FHIR.
-- [ ] Tworzyć Bundle `collection` z `timestamp`, jednym Patient oraz jego Condition, Encounter i Observation. Nie eksportować raportów ani kont personelu.
-- [ ] Wyliczać identyfikatory przez `uuid5(NAMESPACE_URL, "urn:psim:{ResourceType}:{id}")`, ustawiać `fullUrl` jako `urn:uuid:{uuid}` i kierować wszystkie referencje do wpisów w tej paczce.
-- [ ] Zastosować dokładne statusy, systemy kodowania i mapowanie dat ze SPEC. Daty rozpoznania nie traktować jako początku choroby; `Condition.recordedDate` pobierać z `created_at`.
-- [ ] Uwzględnić LOINC `2339-0` i `29463-7`, UCUM, kategorie Observation i profil Body Weight.
-- [ ] Serializować `valueQuantity.value` jako liczbę JSON i pomijać puste elementy opcjonalne. Sprawdzić zachowanie wartości Decimal w wybranym sposobie serializacji.
-- [ ] Dodać `GET /api/v1/patients/{id}/fhir-export/` i przycisk na karcie pacjenta, korzystające z tego samego eksportu.
-- [ ] Ustawić `application/fhir+json` i nagłówek pobrania `patient-{id}-fhir.json`; kontrolować rolę i rejestrować eksport w audycie.
-- [ ] Uzupełnić OpenAPI o format i przykład odpowiedzi eksportu.
-- [ ] Dodać testy typów, kodów, statusów, deterministycznych identyfikatorów, zamknięcia referencji i izolacji danych wskazanego pacjenta, również dla pacjenta bez danych zależnych.
-- [ ] Zwalidować przykładowy Bundle oficjalnym walidatorem HL7 dla `4.0.1`; zapisać wersję narzędzia, polecenie i rezultat. Usunąć błędy, a ostrzeżenia przeanalizować i opisać.
-- [ ] Udokumentować źródła i warunki wykorzystania podzbioru ICD-10 oraz mapowania LOINC.
+- [x] Zaimplementować mapowanie w `registry/fhir.py` dla R4 4.0.1, bez dodawania UUID do modeli i bez tworzenia serwera FHIR.
+- [x] Tworzyć Bundle `collection` z `timestamp`, jednym Patient oraz jego Condition, Encounter i Observation. Nie eksportować raportów ani kont personelu.
+- [x] Wyliczać identyfikatory przez `uuid5(NAMESPACE_URL, "urn:psim:{ResourceType}:{id}")`, ustawiać `fullUrl` jako `urn:uuid:{uuid}` i kierować wszystkie referencje do wpisów w tej paczce.
+- [x] Zastosować dokładne statusy, systemy kodowania i mapowanie dat ze SPEC. Daty rozpoznania nie traktować jako początku choroby; `Condition.recordedDate` pobierać z `created_at`.
+- [x] Uwzględnić LOINC `2339-0` i `29463-7`, UCUM, kategorie Observation i profil Body Weight.
+- [x] Serializować `valueQuantity.value` jako liczbę JSON i pomijać puste elementy opcjonalne. Sprawdzić zachowanie wartości Decimal w wybranym sposobie serializacji.
+- [x] Dodać `GET /api/v1/patients/{id}/fhir-export/` i przycisk na karcie pacjenta, korzystające z tego samego eksportu.
+- [x] Ustawić `application/fhir+json` i nagłówek pobrania `patient-{id}-fhir.json`; kontrolować rolę i rejestrować eksport w audycie.
+- [x] Uzupełnić OpenAPI o format i przykład odpowiedzi eksportu.
+- [x] Dodać testy typów, kodów, statusów, deterministycznych identyfikatorów, zamknięcia referencji i izolacji danych wskazanego pacjenta, również dla pacjenta bez danych zależnych.
+- [x] Zwalidować przykładowy Bundle oficjalnym walidatorem HL7 dla `4.0.1`; zapisać wersję narzędzia, polecenie i rezultat. Usunąć błędy, a ostrzeżenia przeanalizować i opisać.
+- [x] Udokumentować źródła i warunki wykorzystania podzbioru ICD-10 oraz mapowania LOINC.
 
 **Kryterium odbioru:** pobrany plik zawiera tylko dane wskazanego pacjenta, ma poprawne referencje i liczby JSON oraz przechodzi walidację R4 bez błędów. Walidator pozostaje narzędziem odbioru, a nie zależnością uruchomieniową aplikacji.
+
+**Wynik odbioru, 24 listopada 2026 r.** Przeszło 116 testów, w tym 7 scenariuszy eksportu. `check`, `makemigrations --check --dry-run`, `pip check` i walidacja OpenAPI zakończyły się powodzeniem. Na osobnej bazie `seed_demo` sprawdzono odsyłacz na karcie pacjenta oraz pobranie dwóch plików przez HTTP w sesji personelu. Walidator HL7 CLI 7.0.6 potwierdził 0 błędów dla obu plików i przykładu OpenAPI. Polecenie i analizę ostrzeżeń zapisano w [README](README.md#walidacja-eksportu).
 
 ## 9. Etap 7 — odbiór całości
 

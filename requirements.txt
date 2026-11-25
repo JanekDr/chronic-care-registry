@@ -10,6 +10,7 @@ jsonschema-specifications==2025.9.1
 PyYAML==6.0.4
 referencing==0.37.0
 rpds-py==2026.9.1
+simplejson==4.3.0
 sqlparse==0.6.1
 typing-extensions==4.16.0
 tzdata==2026.6
